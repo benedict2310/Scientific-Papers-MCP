@@ -1,0 +1,11 @@
+{
+    "mcpServers": {
+	"scientific-papers": {
+      "command": "sh",
+      "args": [
+        "-c",
+        "cd /Users/bene/Dev-Source-NoBackup/MCP-tutorial && node dist/server.js 2>&1 | tee /tmp/mcp-server.log"
+      ]
+    }
+    }
+  }

@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "scientific-papers": {
+      "command": "node",
+      "args": [
+        "dist/server.js"
+      ],
+      "cwd": "/Users/bene/Dev-Source-NoBackup/MCP-tutorial",
+      "env": {
+        "NODE_ENV": "production"
+      }
+    }
+  }
+} 
