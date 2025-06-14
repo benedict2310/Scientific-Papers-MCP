@@ -370,5 +370,11 @@ async function handleFetchContent(options: CLIOptions) {
 
 // Run CLI if this file is executed directly
 if (import.meta.url === `file://${process.argv[1]}`) {
-  runCLI();
+  runCLI().then(() => {
+    // Force output flush
+    process.stdout.write('');
+  }).catch((error) => {
+    console.error('Unexpected error:', error);
+    process.exit(1);
+  });
 } 
