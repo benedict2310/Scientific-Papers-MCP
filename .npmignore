@@ -1,0 +1,51 @@
+# Source files - we only want to publish the built files
+src/
+tsconfig.json
+
+# Development files
+*.test.js
+*.test.ts
+test/
+tests/
+__tests__/
+*.spec.js
+*.spec.ts
+
+# Development scripts
+debug-*.js
+test-*.js
+startup-test.js
+mcpconfig.json
+debug-config.json
+
+# Documentation folders (keep README.md)
+docs/
+ai/
+
+# Git files
+.git/
+.gitignore
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Coverage
+coverage/
+nyc_output/
+
+# Environment files
+.env*
+
+# Lock files (package-lock.json should be included, but yarn.lock excluded)
+yarn.lock 

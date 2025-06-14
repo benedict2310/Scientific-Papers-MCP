@@ -1,12 +1,10 @@
 {
-  "name": "@futurelab/latest-science-mcp",
+  "name": "@futurelab-studio/latest-science-mcp",
   "version": "0.1.0",
   "description": "MCP Server for Scientific Paper Harvesting from arXiv and OpenAlex",
   "type": "module",
   "main": "dist/server.js",
-  "bin": {
-    "latest-science-mcp": "dist/cli.js"
-  },
+  "bin": "dist/cli.js",
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
@@ -15,11 +13,26 @@
     "test": "vitest",
     "test:run": "vitest run",
     "lint": "eslint src/**/*.ts",
-    "format": "prettier --write src/**/*.ts"
+    "format": "prettier --write src/**/*.ts",
+    "prepublishOnly": "npm run build",
+    "prepack": "npm run build"
   },
   "keywords": ["mcp", "scientific-papers", "arxiv", "openalex", "research"],
   "author": "FutureLab",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/futurelab-studio/latest-science-mcp.git"
+  },
+  "homepage": "https://github.com/futurelab-studio/latest-science-mcp#readme",
+  "bugs": {
+    "url": "https://github.com/futurelab-studio/latest-science-mcp/issues"
+  },
+  "files": [
+    "dist/**/*",
+    "README.md",
+    "package.json"
+  ],
   "engines": {
     "node": ">=20.0.0"
   },
