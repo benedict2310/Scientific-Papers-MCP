@@ -52,7 +52,6 @@ function displayTextContent(paper: any, showText: boolean, textPreview?: number)
 }
 
 function printUsage() {
-  console.error('DEBUG: printUsage called');
   console.log(`
 Usage: latest-science-mcp <command> [options]
 
@@ -370,13 +369,7 @@ async function handleFetchContent(options: CLIOptions) {
 }
 
 // Run CLI - execute unconditionally since this is the CLI entry point
-console.error('DEBUG: CLI starting...');
-runCLI().then(() => {
-  console.error('DEBUG: CLI completed successfully');
-  // Force output flush
-  process.stdout.write('');
-}).catch((error) => {
-  console.error('DEBUG: CLI error:', error);
+runCLI().catch((error) => {
   console.error('Unexpected error:', error);
   process.exit(1);
 }); 
