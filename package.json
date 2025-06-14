@@ -43,21 +43,22 @@
     "node": ">=20.0.0"
   },
   "dependencies": {
+    "@futurelab-studio/latest-science-mcp": "^0.1.5",
     "@modelcontextprotocol/sdk": "^1.12.0",
-    "zod": "^3.22.0",
     "axios": "^1.9.0",
     "cheerio": "^1.0.0",
-    "winston": "^3.11.0"
+    "winston": "^3.11.0",
+    "zod": "^3.22.0"
   },
   "devDependencies": {
-    "typescript": "^5.0.0",
     "@types/node": "^20.0.0",
-    "vitest": "^1.0.0",
-    "nock": "^13.0.0",
-    "execa": "^8.0.0",
-    "eslint": "^8.0.0",
     "@typescript-eslint/eslint-plugin": "^6.0.0",
     "@typescript-eslint/parser": "^6.0.0",
-    "prettier": "^3.0.0"
+    "eslint": "^8.0.0",
+    "execa": "^8.0.0",
+    "nock": "^13.0.0",
+    "prettier": "^3.0.0",
+    "typescript": "^5.0.0",
+    "vitest": "^3.2.3"
   }
 }

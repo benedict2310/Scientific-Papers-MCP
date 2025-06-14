@@ -1,10 +1,9 @@
-import getFunctionName from 'get-func-name'
-import { truncate } from './helpers'
-
+import { truncate } from './helpers.js';
 export default function inspectFunction(func, options) {
-  const name = getFunctionName(func)
-  if (!name) {
-    return options.stylize('[Function]', 'special')
-  }
-  return options.stylize(`[Function ${truncate(name, options.truncate - 11)}]`, 'special')
+    const functionType = func[Symbol.toStringTag] || 'Function';
+    const name = func.name;
+    if (!name) {
+        return options.stylize(`[${functionType}]`, 'special');
+    }
+    return options.stylize(`[${functionType} ${truncate(name, options.truncate - 11)}]`, 'special');
 }

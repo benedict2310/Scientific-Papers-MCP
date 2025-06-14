@@ -11,54 +11,16 @@
 </p>
 
 <p align=center>
-  <a href="./LICENSE">
+  <a href="https://www.npmjs.com/package/chai">
     <img
-      alt="license:mit"
-      src="https://img.shields.io/badge/license-mit-green.svg?style=flat-square"
-    />
-  </a>
-  <a href="https://github.com/chaijs/chai/releases">
-    <img
-      alt="tag:?"
-      src="https://img.shields.io/github/tag/chaijs/chai.svg?style=flat-square"
+      alt="downloads:?"
+      src="https://img.shields.io/npm/dm/chai.svg?style=flat-square"
     />
   </a>
   <a href="https://www.npmjs.com/package/chai">
     <img
       alt="node:?"
       src="https://img.shields.io/badge/node-%3E=4.0-blue.svg?style=flat-square"
-    />
-  </a>
-  <br/>
-  <a href="https://saucelabs.com/u/chaijs">
-    <img
-      alt="Selenium Test Status"
-      src="https://saucelabs.com/browser-matrix/chaijs.svg"
-    />
-  </a>
-  <br/>
-  <a href="https://www.npmjs.com/packages/chai">
-    <img
-      alt="downloads:?"
-      src="https://img.shields.io/npm/dm/chai.svg?style=flat-square"
-    />
-  </a>
-  <a href="https://travis-ci.org/chaijs/chai">
-    <img
-      alt="build:?"
-      src="https://img.shields.io/travis/chaijs/chai/master.svg?style=flat-square"
-    />
-  </a>
-  <a href="https://codecov.io/gh/chaijs/chai">
-    <img
-      alt="coverage:?"
-      src="https://img.shields.io/codecov/c/github/chaijs/chai.svg?style=flat-square"
-    />
-  </a>
-  <a href="">
-    <img
-      alt="devDependencies:?"
-      src="https://img.shields.io/david/chaijs/chai.svg?style=flat-square"
     />
   </a>
   <br/>
@@ -109,32 +71,12 @@ You can also use it within the browser; install via npm and use the `chai.js` fi
 Import the library in your code, and then pick one of the styles you'd like to use - either `assert`, `expect` or `should`:
 
 ```js
-var chai = require('chai');  
-var assert = chai.assert;    // Using Assert style
-var expect = chai.expect;    // Using Expect style
-var should = chai.should();  // Using Should style
+import { assert } from 'chai';  // Using Assert style
+import { expect } from 'chai';  // Using Expect style
+import { should } from 'chai';  // Using Should style
 ```
 
-### Pre-Native Modules Usage (_registers the chai testing style globally_)
-
-```js
-require('chai/register-assert');  // Using Assert style
-require('chai/register-expect');  // Using Expect style
-require('chai/register-should');  // Using Should style
-```
-
-### Pre-Native Modules Usage (_as local variables_)
-
-```js
-const { assert } = require('chai');  // Using Assert style
-const { expect } = require('chai');  // Using Expect style
-const { should } = require('chai');  // Using Should style
-should();  // Modifies `Object.prototype`
-
-const { expect, use } = require('chai');  // Creates local variables `expect` and `use`; useful for plugin use
-```
-
-### Native Modules Usage (_registers the chai testing style globally_)
+### Register the chai testing style globally
 
 ```js
 import 'chai/register-assert';  // Using Assert style
@@ -142,21 +84,23 @@ import 'chai/register-expect';  // Using Expect style
 import 'chai/register-should';  // Using Should style
 ```
 
-### Native Modules Usage (_local import only_)
+### Import assertion styles as local variables
 
 ```js
 import { assert } from 'chai';  // Using Assert style
 import { expect } from 'chai';  // Using Expect style
 import { should } from 'chai';  // Using Should style
 should();  // Modifies `Object.prototype`
+
+import { expect, use } from 'chai';  // Creates local variables `expect` and `use`; useful for plugin use
 ```
 
 ### Usage with Mocha
 
 ```bash
-mocha spec.js -r chai/register-assert  # Using Assert style
-mocha spec.js -r chai/register-expect  # Using Expect style
-mocha spec.js -r chai/register-should  # Using Should style
+mocha spec.js --require chai/register-assert.js  # Using Assert style
+mocha spec.js --require chai/register-expect.js  # Using Expect style
+mocha spec.js --require chai/register-should.js  # Using Should style
 ```
 
 [Read more about these styles in our docs](http://chaijs.com/guide/styles/).
@@ -177,11 +121,9 @@ Chai offers a robust Plugin architecture for extending Chai's assertions and int
 - [chaijs / chai-docs](https://github.com/chaijs/chai-docs): The chaijs.com website source code.
 - [chaijs / assertion-error](https://github.com/chaijs/assertion-error): Custom `Error` constructor thrown upon an assertion failing.
 - [chaijs / deep-eql](https://github.com/chaijs/deep-eql): Improved deep equality testing for Node.js and the browser.
-- [chaijs / type-detect](https://github.com/chaijs/type-detect): Improved typeof detection for Node.js and the browser.
 - [chaijs / check-error](https://github.com/chaijs/check-error): Error comparison and information related utility for Node.js and the browser.
 - [chaijs / loupe](https://github.com/chaijs/loupe): Inspect utility for Node.js and browsers.
 - [chaijs / pathval](https://github.com/chaijs/pathval): Object value retrieval given a string path.
-- [chaijs / get-func-name](https://github.com/chaijs/get-func-name): Utility for getting a function's name for node and the browser.
 
 ### Contributing
 

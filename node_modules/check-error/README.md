@@ -1,76 +1,13 @@
 <h1 align=center>
   <a href="http://chaijs.com" title="Chai Documentation">
-    <img alt="ChaiJS" src="http://chaijs.com/img/chai-logo.png"/> check-error
+    <img alt="ChaiJS" src="http://chaijs.com/img/chai-logo.png">
   </a>
+  <br>
+  check-error
 </h1>
 
 <p align=center>
   Error comparison and information related utility for <a href="http://nodejs.org">node</a> and the browser.
-</p>
-
-<p align=center>
-  <a href="./LICENSE">
-    <img
-      alt="license:mit"
-      src="https://img.shields.io/badge/license-mit-green.svg?style=flat-square"
-    />
-  </a>
-  <a href="https://github.com/chaijs/check-error/releases">
-    <img
-      alt="tag:?"
-      src="https://img.shields.io/github/tag/chaijs/check-error.svg?style=flat-square"
-    />
-  </a>
-  <a href="https://travis-ci.org/chaijs/check-error">
-    <img
-      alt="build:?"
-      src="https://img.shields.io/travis/chaijs/check-error/master.svg?style=flat-square"
-    />
-  </a>
-  <a href="https://coveralls.io/r/chaijs/check-error">
-    <img
-      alt="coverage:?"
-      src="https://img.shields.io/coveralls/chaijs/check-error/master.svg?style=flat-square"
-    />
-  </a>
-  <a href="https://www.npmjs.com/packages/check-error">
-    <img
-      alt="npm:?"
-      src="https://img.shields.io/npm/v/check-error.svg?style=flat-square"
-    />
-  </a>
-  <a href="https://www.npmjs.com/packages/check-error">
-    <img
-      alt="dependencies:?"
-      src="https://img.shields.io/npm/dm/check-error.svg?style=flat-square"
-    />
-  </a>
-  <a href="">
-    <img
-      alt="devDependencies:?"
-      src="https://img.shields.io/david/chaijs/check-error.svg?style=flat-square"
-    />
-  </a>
-  <br/>
-  <a href="https://saucelabs.com/u/chaijs-check-error">
-    <img
-      alt="Selenium Test Status"
-      src="https://saucelabs.com/browser-matrix/chaijs-check-error.svg"
-    />
-  </a>
-  <br>
-  <a href="https://chai-slack.herokuapp.com/">
-    <img
-      alt="Join the Slack chat"
-      src="https://img.shields.io/badge/slack-join%20chat-E2206F.svg?style=flat-square"
-    />
-  </a>
-  <a href="https://gitter.im/chaijs/chai">
-    <img
-      alt="Join the Gitter chat"
-      src="https://img.shields.io/badge/gitter-join%20chat-D0104D.svg?style=flat-square"
-    />
-  </a>
 </p>
 
 ## What is Check-Error?

@@ -4,11 +4,7 @@
  * MIT Licensed
  */
 
-/*!
- * Module dependencies
- */
-
-var inspect = require('./inspect');
+import {inspect} from './inspect.js';
 
 /**
  * ### .compareByInspect(mixed, mixed)
@@ -18,14 +14,13 @@ var inspect = require('./inspect');
  * and objects with irregular/missing toString can still be sorted without a
  * TypeError.
  *
- * @param {Mixed} first element to compare
- * @param {Mixed} second element to compare
- * @returns {Number} -1 if 'a' should come before 'b'; otherwise 1
+ * @param {unknown} a first element to compare
+ * @param {unknown} b second element to compare
+ * @returns {number} -1 if 'a' should come before 'b'; otherwise 1
  * @name compareByInspect
  * @namespace Utils
- * @api public
+ * @public
  */
-
-module.exports = function compareByInspect(a, b) {
+export function compareByInspect(a, b) {
   return inspect(a) < inspect(b) ? -1 : 1;
-};
+}

@@ -15,19 +15,19 @@
  *     utils.flag(this, 'foo', 'bar'); // setter
  *     utils.flag(this, 'foo'); // getter, returns `bar`
  *
- * @param {Object} object constructed Assertion
- * @param {String} key
- * @param {Mixed} value (optional)
+ * @param {object} obj object constructed Assertion
+ * @param {string} key
+ * @param {unknown} value (optional)
  * @namespace Utils
  * @name flag
- * @api private
+ * @returns {unknown | undefined}
+ * @private
  */
-
-module.exports = function flag(obj, key, value) {
+export function flag(obj, key, value) {
   var flags = obj.__flags || (obj.__flags = Object.create(null));
   if (arguments.length === 3) {
     flags[key] = value;
   } else {
     return flags[key];
   }
-};
+}

@@ -1,10 +1,13 @@
-var type = require('type-detect');
+import {flag} from './flag.js';
+import {type} from './type-detect.js';
 
-var flag = require('./flag');
-
+/**
+ * @param {unknown} obj
+ * @returns {boolean}
+ */
 function isObjectType(obj) {
   var objectType = type(obj);
-  var objectTypes = ['Array', 'Object', 'function'];
+  var objectTypes = ['Array', 'Object', 'Function'];
 
   return objectTypes.indexOf(objectType) !== -1;
 }
@@ -18,14 +21,14 @@ function isObjectType(obj) {
  *
  * Returns the `operator` or `undefined` value for an Assertion.
  *
- * @param {Object} object (constructed Assertion)
- * @param {Arguments} chai.Assertion.prototype.assert arguments
+ * @param {object} obj object (constructed Assertion)
+ * @param {unknown} args chai.Assertion.prototype.assert arguments
+ * @returns {unknown}
  * @namespace Utils
  * @name getOperator
- * @api public
+ * @public
  */
-
-module.exports = function getOperator(obj, args) {
+export function getOperator(obj, args) {
   var operator = flag(obj, 'operator');
   var negate = flag(obj, 'negate');
   var expected = args[3];
@@ -52,4 +55,4 @@ module.exports = function getOperator(obj, args) {
   }
 
   return isObject ? 'deepStrictEqual' : 'strictEqual';
-};
+}

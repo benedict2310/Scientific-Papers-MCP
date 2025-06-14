@@ -24,7 +24,7 @@ npm run build
 
 To use this server with an MCP client (like Claude Desktop), add the following to your MCP client configuration:
 
-### For published package (when available on npm):
+### For published package (available on npm):
 
 ```json
 {
@@ -33,7 +33,7 @@ To use this server with an MCP client (like Claude Desktop), add the following t
       "command": "npx",
       "args": [
         "-y",
-        "@futurelab/latest-science-mcp"
+        "@futurelab-studio/latest-science-mcp"
       ]
     }
   }

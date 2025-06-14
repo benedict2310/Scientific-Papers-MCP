@@ -1,5 +1,3 @@
-'use strict';
-
 /* !
  * Chai - pathval utility
  * Copyright(c) 2012-2014 Jake Luer <jake@alogicalparadox.com>
@@ -44,7 +42,7 @@
  * @api public
  */
 
-function hasProperty(obj, name) {
+export function hasProperty(obj, name) {
   if (typeof obj === 'undefined' || obj === null) {
     return false;
   }
@@ -73,9 +71,9 @@ function hasProperty(obj, name) {
  */
 
 function parsePath(path) {
-  var str = path.replace(/([^\\])\[/g, '$1.[');
-  var parts = str.match(/(\\\.|[^.]+?)+/g);
-  return parts.map(function mapMatches(value) {
+  const str = path.replace(/([^\\])\[/g, '$1.[');
+  const parts = str.match(/(\\\.|[^.]+?)+/g);
+  return parts.map((value) => {
     if (
       value === 'constructor' ||
       value === '__proto__' ||
@@ -83,9 +81,9 @@ function parsePath(path) {
     ) {
       return {};
     }
-    var regexp = /^\[(\d+)\]$/;
-    var mArr = regexp.exec(value);
-    var parsed = null;
+    const regexp = /^\[(\d+)\]$/;
+    const mArr = regexp.exec(value);
+    let parsed = null;
     if (mArr) {
       parsed = { i: parseFloat(mArr[1]) };
     } else {
@@ -112,12 +110,12 @@ function parsePath(path) {
  */
 
 function internalGetPathValue(obj, parsed, pathDepth) {
-  var temporaryValue = obj;
-  var res = null;
+  let temporaryValue = obj;
+  let res = null;
   pathDepth = typeof pathDepth === 'undefined' ? parsed.length : pathDepth;
 
-  for (var i = 0; i < pathDepth; i++) {
-    var part = parsed[i];
+  for (let i = 0; i < pathDepth; i++) {
+    const part = parsed[i];
     if (temporaryValue) {
       if (typeof part.p === 'undefined') {
         temporaryValue = temporaryValue[part.i];
@@ -149,13 +147,13 @@ function internalGetPathValue(obj, parsed, pathDepth) {
  */
 
 function internalSetPathValue(obj, val, parsed) {
-  var tempObj = obj;
-  var pathDepth = parsed.length;
-  var part = null;
+  let tempObj = obj;
+  const pathDepth = parsed.length;
+  let part = null;
   // Here we iterate through every part of the path
-  for (var i = 0; i < pathDepth; i++) {
-    var propName = null;
-    var propVal = null;
+  for (let i = 0; i < pathDepth; i++) {
+    let propName = null;
+    let propVal = null;
     part = parsed[i];
 
     // If it's the last part of the path, we set the 'propName' value with the property name
@@ -169,7 +167,7 @@ function internalSetPathValue(obj, val, parsed) {
       tempObj = tempObj[part.i];
     } else {
       // If the obj doesn't have the property we create one with that name to define it
-      var next = parsed[i + 1];
+      const next = parsed[i + 1];
       // Here we set the name of the property which will be defined
       propName = typeof part.p === 'undefined' ? part.i : part.p;
       // Here we decide if this property will be an array or a new object
@@ -202,10 +200,10 @@ function internalSetPathValue(obj, val, parsed) {
  * @api public
  */
 
-function getPathInfo(obj, path) {
-  var parsed = parsePath(path);
-  var last = parsed[parsed.length - 1];
-  var info = {
+export function getPathInfo(obj, path) {
+  const parsed = parsePath(path);
+  const last = parsed[parsed.length - 1];
+  const info = {
     parent:
       parsed.length > 1 ?
         internalGetPathValue(obj, parsed, parsed.length - 1) :
@@ -249,8 +247,8 @@ function getPathInfo(obj, path) {
  * @api public
  */
 
-function getPathValue(obj, path) {
-  var info = getPathInfo(obj, path);
+export function getPathValue(obj, path) {
+  const info = getPathInfo(obj, path);
   return info.value;
 }
 
@@ -287,15 +285,8 @@ function getPathValue(obj, path) {
  * @api private
  */
 
-function setPathValue(obj, path, val) {
-  var parsed = parsePath(path);
+export function setPathValue(obj, path, val) {
+  const parsed = parsePath(path);
   internalSetPathValue(obj, val, parsed);
   return obj;
 }
-
-module.exports = {
-  hasProperty: hasProperty,
-  getPathInfo: getPathInfo,
-  getPathValue: getPathValue,
-  setPathValue: setPathValue,
-};

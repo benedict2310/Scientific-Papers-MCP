@@ -4,11 +4,7 @@
  * MIT Licensed
  */
 
-/*!
- * Module dependencies
- */
-
-var getOwnEnumerablePropertySymbols = require('./getOwnEnumerablePropertySymbols');
+import {getOwnEnumerablePropertySymbols} from './getOwnEnumerablePropertySymbols.js';
 
 /**
  * ### .getOwnEnumerableProperties(object)
@@ -17,13 +13,12 @@ var getOwnEnumerablePropertySymbols = require('./getOwnEnumerablePropertySymbols
  * symbols of an object. This function is necessary because Object.keys only
  * returns enumerable property names, not enumerable property symbols.
  *
- * @param {Object} object
+ * @param {object} obj
  * @returns {Array}
  * @namespace Utils
  * @name getOwnEnumerableProperties
- * @api public
+ * @public
  */
-
-module.exports = function getOwnEnumerableProperties(obj) {
+export function getOwnEnumerableProperties(obj) {
   return Object.keys(obj).concat(getOwnEnumerablePropertySymbols(obj));
-};
+}

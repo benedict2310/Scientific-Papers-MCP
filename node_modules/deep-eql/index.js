@@ -1,4 +1,3 @@
-'use strict';
 /* globals Symbol: false, Uint8Array: false, WeakMap: false */
 /*!
  * deep-eql
@@ -6,7 +5,24 @@
  * MIT Licensed
  */
 
-var type = require('type-detect');
+function type(obj) {
+  if (typeof obj === 'undefined') {
+    return 'undefined';
+  }
+
+  if (obj === null) {
+    return 'null';
+  }
+
+  const stringTag = obj[Symbol.toStringTag];
+  if (typeof stringTag === 'string') {
+    return stringTag;
+  }
+  const sliceStart = 8;
+  const sliceEnd = -1;
+  return Object.prototype.toString.call(obj).slice(sliceStart, sliceEnd);
+}
+
 function FakeMap() {
   this._key = 'chai/deep-eql__' + Math.random() + Date.now();
 }
@@ -25,7 +41,7 @@ FakeMap.prototype = {
   },
 };
 
-var MemoizeMap = typeof WeakMap === 'function' ? WeakMap : FakeMap;
+export var MemoizeMap = typeof WeakMap === 'function' ? WeakMap : FakeMap;
 /*!
  * Check to see if the MemoizeMap has recorded a result of the two operands
  *
@@ -76,8 +92,7 @@ function memoizeSet(leftHandOperand, rightHandOperand, memoizeMap, result) {
  * Primary Export
  */
 
-module.exports = deepEqual;
-module.exports.MemoizeMap = MemoizeMap;
+export default deepEqual;
 
 /**
  * Assert deeply nested sameValue equality between two objects of any type.

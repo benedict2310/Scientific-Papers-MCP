@@ -1,16 +1,18 @@
-let getPromiseValue = () => 'Promise{…}'
+let getPromiseValue = () => 'Promise{…}';
 try {
-  const { getPromiseDetails, kPending, kRejected } = process.binding('util')
-  if (Array.isArray(getPromiseDetails(Promise.resolve()))) {
-    getPromiseValue = (value, options) => {
-      const [state, innerValue] = getPromiseDetails(value)
-      if (state === kPending) {
-        return 'Promise{<pending>}'
-      }
-      return `Promise${state === kRejected ? '!' : ''}{${options.inspect(innerValue, options)}}`
+    // @ts-ignore
+    const { getPromiseDetails, kPending, kRejected } = process.binding('util');
+    if (Array.isArray(getPromiseDetails(Promise.resolve()))) {
+        getPromiseValue = (value, options) => {
+            const [state, innerValue] = getPromiseDetails(value);
+            if (state === kPending) {
+                return 'Promise{<pending>}';
+            }
+            return `Promise${state === kRejected ? '!' : ''}{${options.inspect(innerValue, options)}}`;
+        };
     }
-  }
-} catch (notNode) {
-  /* ignore */
 }
-export default getPromiseValue
+catch (notNode) {
+    /* ignore */
+}
+export default getPromiseValue;

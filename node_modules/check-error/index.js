@@ -1,19 +1,12 @@
-'use strict';
+function isErrorInstance(obj) {
+  // eslint-disable-next-line prefer-reflect
+  return obj instanceof Error || Object.prototype.toString.call(obj) === '[object Error]';
+}
 
-/* !
- * Chai - checkError utility
- * Copyright(c) 2012-2016 Jake Luer <jake@alogicalparadox.com>
- * MIT Licensed
- */
-
-var getFunctionName = require('get-func-name');
-/**
- * ### .checkError
- *
- * Checks that an error conforms to a given set of criteria and/or retrieves information about it.
- *
- * @api public
- */
+function isRegExp(obj) {
+  // eslint-disable-next-line prefer-reflect
+  return Object.prototype.toString.call(obj) === '[object RegExp]';
+}
 
 /**
  * ### .compatibleInstance(thrown, errorLike)
@@ -30,7 +23,7 @@ var getFunctionName = require('get-func-name');
  */
 
 function compatibleInstance(thrown, errorLike) {
-  return errorLike instanceof Error && thrown === errorLike;
+  return isErrorInstance(errorLike) && thrown === errorLike;
 }
 
 /**
@@ -50,10 +43,10 @@ function compatibleInstance(thrown, errorLike) {
  */
 
 function compatibleConstructor(thrown, errorLike) {
-  if (errorLike instanceof Error) {
+  if (isErrorInstance(errorLike)) {
     // If `errorLike` is an instance of any error we compare their constructors
     return thrown.constructor === errorLike.constructor || thrown instanceof errorLike.constructor;
-  } else if (errorLike.prototype instanceof Error || errorLike === Error) {
+  } else if ((typeof errorLike === 'object' || typeof errorLike === 'function') && errorLike.prototype) {
     // If `errorLike` is a constructor that inherits from Error, we compare `thrown` to `errorLike` directly
     return thrown.constructor === errorLike || thrown instanceof errorLike;
   }
@@ -76,8 +69,8 @@ function compatibleConstructor(thrown, errorLike) {
  */
 
 function compatibleMessage(thrown, errMatcher) {
-  var comparisonString = typeof thrown === 'string' ? thrown : thrown.message;
-  if (errMatcher instanceof RegExp) {
+  const comparisonString = typeof thrown === 'string' ? thrown : thrown.message;
+  if (isRegExp(errMatcher)) {
     return errMatcher.test(comparisonString);
   } else if (typeof errMatcher === 'string') {
     return comparisonString.indexOf(errMatcher) !== -1; // eslint-disable-line no-magic-numbers
@@ -98,16 +91,16 @@ function compatibleMessage(thrown, errMatcher) {
  */
 
 function getConstructorName(errorLike) {
-  var constructorName = errorLike;
-  if (errorLike instanceof Error) {
-    constructorName = getFunctionName(errorLike.constructor);
+  let constructorName = errorLike;
+  if (isErrorInstance(errorLike)) {
+    constructorName = errorLike.constructor.name;
   } else if (typeof errorLike === 'function') {
     // If `err` is not an instance of Error it is an error constructor itself or another function.
     // If we've got a common function we get its name, otherwise we may need to create a new instance
     // of the error just in case it's a poorly-constructed error. Please see chaijs/chai/issues/45 to know more.
-    constructorName = getFunctionName(errorLike);
+    constructorName = errorLike.name;
     if (constructorName === '') {
-      var newConstructorName = getFunctionName(new errorLike()); // eslint-disable-line new-cap
+      const newConstructorName = (new errorLike().name); // eslint-disable-line new-cap
       constructorName = newConstructorName || constructorName;
     }
   }
@@ -129,7 +122,7 @@ function getConstructorName(errorLike) {
  */
 
 function getMessage(errorLike) {
-  var msg = '';
+  let msg = '';
   if (errorLike && errorLike.message) {
     msg = errorLike.message;
   } else if (typeof errorLike === 'string') {
@@ -139,10 +132,4 @@ function getMessage(errorLike) {
   return msg;
 }
 
-module.exports = {
-  compatibleInstance: compatibleInstance,
-  compatibleConstructor: compatibleConstructor,
-  compatibleMessage: compatibleMessage,
-  getMessage: getMessage,
-  getConstructorName: getConstructorName,
-};
+export { compatibleInstance, compatibleConstructor, compatibleMessage, getMessage, getConstructorName };
