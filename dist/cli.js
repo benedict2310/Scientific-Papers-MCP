@@ -35,6 +35,7 @@ function displayTextContent(paper, showText, textPreview) {
     }
 }
 function printUsage() {
+    console.error('DEBUG: printUsage called');
     console.log(`
 Usage: latest-science-mcp <command> [options]
 
@@ -312,10 +313,14 @@ async function handleFetchContent(options) {
 }
 // Run CLI if this file is executed directly
 if (import.meta.url === `file://${process.argv[1]}`) {
+    // Add debug output to stderr
+    console.error('DEBUG: CLI starting...');
     runCLI().then(() => {
+        console.error('DEBUG: CLI completed successfully');
         // Force output flush
         process.stdout.write('');
     }).catch((error) => {
+        console.error('DEBUG: CLI error:', error);
         console.error('Unexpected error:', error);
         process.exit(1);
     });
