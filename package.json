@@ -1,6 +1,6 @@
 {
   "name": "@futurelab-studio/latest-science-mcp",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "MCP Server for Scientific Paper Harvesting from arXiv and OpenAlex",
   "type": "module",
   "main": "dist/server.js",
@@ -17,7 +17,13 @@
     "prepublishOnly": "npm run build",
     "prepack": "npm run build"
   },
-  "keywords": ["mcp", "scientific-papers", "arxiv", "openalex", "research"],
+  "keywords": [
+    "mcp",
+    "scientific-papers",
+    "arxiv",
+    "openalex",
+    "research"
+  ],
   "author": "FutureLab",
   "license": "MIT",
   "repository": {
