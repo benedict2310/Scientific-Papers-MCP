@@ -367,4 +367,5 @@ async function handleFetchContent(options: CLIOptions) {
   }
 }
 
-runCLI(); 
+// Export runCLI for conditional execution from server.ts
+export { runCLI }; 
