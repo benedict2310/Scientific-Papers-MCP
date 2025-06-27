@@ -30,11 +30,11 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/futurelab-studio/latest-science-mcp.git"
+    "url": "git+https://github.com/benedict2310/Scientific-Papers-MCP.git"
   },
-  "homepage": "https://github.com/futurelab-studio/latest-science-mcp#readme",
+  "homepage": "https://github.com/benedict2310/Scientific-Papers-MCP#readme",
   "bugs": {
-    "url": "https://github.com/futurelab-studio/latest-science-mcp/issues"
+    "url": "https://github.com/benedict2310/Scientific-Papers-MCP/issues"
   },
   "files": [
     "dist/**/*",

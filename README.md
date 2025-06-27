@@ -34,12 +34,9 @@ To use this server with an MCP client (like Claude Desktop), add the following t
     "scientific-papers": {
       "command": "npx",
       "args": [
-        "--yes",
-        "@futurelab-studio/latest-science-mcp"
-      ],
-      "env": {
-        "NODE_ENV": "production"
-      }
+        "-y",
+        "@futurelab-studio/latest-science-mcp@latest"
+      ]
     }
   }
 }
