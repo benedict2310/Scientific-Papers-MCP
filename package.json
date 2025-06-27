@@ -30,7 +30,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/futurelab-studio/latest-science-mcp.git"
+    "url": "git+https://github.com/futurelab-studio/latest-science-mcp.git"
   },
   "homepage": "https://github.com/futurelab-studio/latest-science-mcp#readme",
   "bugs": {
