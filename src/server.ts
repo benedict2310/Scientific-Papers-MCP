@@ -248,4 +248,4 @@ process.on('SIGTERM', () => {
 main().catch((error) => {
   console.error('Unhandled error in main:', error instanceof Error ? error.message : error);
   process.exit(1);
-}); 
+});

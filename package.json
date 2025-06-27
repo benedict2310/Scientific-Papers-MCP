@@ -5,7 +5,8 @@
   "type": "module",
   "main": "dist/server.js",
   "bin": {
-    "latest-science-mcp": "dist/server.js"
+    "latest-science-mcp": "dist/server.js",
+    "latest-science-cli": "dist/cli.js"
   },
   "scripts": {
     "build": "tsc",
