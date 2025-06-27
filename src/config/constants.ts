@@ -10,7 +10,7 @@ export const DEFAULT_RATE_LIMITS = {
   },
   openalex: {
     maxTokens: 10,
-    refillRate: 10 / 60, // 10 requests per minute to be conservative
+    refillRate: 10 / 1, // 10 requests per second as per OpenAlex API limits (polite pool)
   },
 } as const;
 

@@ -59,10 +59,31 @@ interface OpenAlexWorksResponse {
 
 export class OpenAlexDriver extends BaseDriver {
   private textExtractor: HtmlExtractor;
+  private readonly politePoolEmail = 'contact@sciharvestermcp.org';
 
   constructor(rateLimiter: RateLimiter) {
     super(rateLimiter, 'openalex');
     this.textExtractor = new HtmlExtractor(DEFAULT_TEXT_EXTRACTION_CONFIG);
+  }
+
+  /**
+   * Get common request headers for OpenAlex API with polite pool access
+   */
+  private getRequestHeaders() {
+    return {
+      'User-Agent': `SciHarvester-MCP/0.1.20 (mailto:${this.politePoolEmail}); latest-science-mcp`,
+      'Accept': 'application/json'
+    };
+  }
+
+  /**
+   * Get common request parameters for OpenAlex API with polite pool access
+   */
+  private getRequestParams(additionalParams: Record<string, any> = {}) {
+    return {
+      mailto: this.politePoolEmail,
+      ...additionalParams
+    };
   }
 
   /**
@@ -81,16 +102,14 @@ export class OpenAlexDriver extends BaseDriver {
       
       // Fetch top-level concepts (level 0) with highest works count
       const response = await axios.get<OpenAlexConceptsResponse>(`${OPENALEX_API_BASE}/concepts`, {
-        params: {
+        params: this.getRequestParams({
           filter: 'level:0',
           sort: 'works_count:desc',
           per_page: 50,
           select: 'id,display_name,description,level,works_count'
-        },
+        }),
         timeout: 10000,
-        headers: {
-          'User-Agent': 'latest-science-mcp/0.1.0 (https://github.com/futurelab/latest-science-mcp)'
-        }
+        headers: this.getRequestHeaders()
       });
 
       const concepts = response.data.results;
@@ -109,6 +128,9 @@ export class OpenAlexDriver extends BaseDriver {
       });
       
       if (axios.isAxiosError(error)) {
+        if (error.response?.status === 403) {
+          throw new Error('OpenAlex API access forbidden - check request parameters');
+        }
         if (error.response?.status === 429) {
           throw new Error('Rate limited by OpenAlex API');
         }
@@ -134,20 +156,19 @@ export class OpenAlexDriver extends BaseDriver {
     try {
       logInfo('Fetching latest OpenAlex papers', { category, count });
 
-      // Build filter for concept - handle both ID and name
+      // Build filter for concept - handle different input formats properly
       const conceptFilter = this.buildConceptFilter(category);
+      logInfo('Built concept filter for OpenAlex', { category, filter: conceptFilter });
       
       const response = await axios.get<OpenAlexWorksResponse>(`${OPENALEX_API_BASE}/works`, {
-        params: {
+        params: this.getRequestParams({
           filter: conceptFilter,
           sort: 'publication_date:desc',
-          per_page: count,
+          per_page: Math.min(count, 200), // OpenAlex max per_page is 200
           select: 'id,title,display_name,publication_date,authorships,primary_location,cited_by_count,concepts'
-        },
+        }),
         timeout: 15000,
-        headers: {
-          'User-Agent': 'latest-science-mcp/0.1.0 (https://github.com/futurelab/latest-science-mcp)'
-        }
+        headers: this.getRequestHeaders()
       });
 
       // Process works in parallel for better performance (metadata only)
@@ -162,10 +183,14 @@ export class OpenAlexDriver extends BaseDriver {
       logError('Failed to fetch latest OpenAlex papers', { 
         error: error instanceof Error ? error.message : error,
         category,
-        count 
+        count,
+        status: axios.isAxiosError(error) ? error.response?.status : 'unknown'
       });
       
       if (axios.isAxiosError(error)) {
+        if (error.response?.status === 403) {
+          throw new Error(`OpenAlex API access forbidden - invalid category format: ${category}`);
+        }
         if (error.response?.status === 429) {
           throw new Error('Rate limited by OpenAlex API');
         }
@@ -197,16 +222,14 @@ export class OpenAlexDriver extends BaseDriver {
       const combinedFilter = `${conceptFilter},${dateFilter}`;
       
       const response = await axios.get<OpenAlexWorksResponse>(`${OPENALEX_API_BASE}/works`, {
-        params: {
+        params: this.getRequestParams({
           filter: combinedFilter,
           sort: 'cited_by_count:desc',
-          per_page: count,
+          per_page: Math.min(count, 200), // OpenAlex max per_page is 200
           select: 'id,title,display_name,publication_date,authorships,primary_location,cited_by_count,concepts'
-        },
+        }),
         timeout: 15000,
-        headers: {
-          'User-Agent': 'latest-science-mcp/0.1.0 (https://github.com/futurelab/latest-science-mcp)'
-        }
+        headers: this.getRequestHeaders()
       });
 
       const paperPromises = response.data.results.map(work => this.convertWorkToPaper(work, false)); // false = metadata only
@@ -224,6 +247,9 @@ export class OpenAlexDriver extends BaseDriver {
       });
       
       if (axios.isAxiosError(error)) {
+        if (error.response?.status === 403) {
+          throw new Error(`OpenAlex API access forbidden - invalid concept format: ${concept}`);
+        }
         if (error.response?.status === 429) {
           throw new Error('Rate limited by OpenAlex API');
         }
@@ -256,13 +282,11 @@ export class OpenAlexDriver extends BaseDriver {
         `${OPENALEX_API_BASE}/works/https://openalex.org/${cleanId}`;
       
       const response = await axios.get<OpenAlexWork>(workUrl, {
-        params: {
+        params: this.getRequestParams({
           select: 'id,title,display_name,publication_date,authorships,primary_location,cited_by_count,concepts'
-        },
+        }),
         timeout: 15000,
-        headers: {
-          'User-Agent': 'latest-science-mcp/0.1.0 (https://github.com/futurelab/latest-science-mcp)'
-        }
+        headers: this.getRequestHeaders()
       });
 
       const paper = await this.convertWorkToPaper(response.data, true);
@@ -277,6 +301,9 @@ export class OpenAlexDriver extends BaseDriver {
       });
       
       if (axios.isAxiosError(error)) {
+        if (error.response?.status === 403) {
+          throw new Error(`OpenAlex API access forbidden - invalid work ID: ${id}`);
+        }
         if (error.response?.status === 404) {
           throw new Error(`Paper with ID ${id} not found on OpenAlex`);
         }
@@ -377,18 +404,60 @@ export class OpenAlexDriver extends BaseDriver {
 
   /**
    * Build concept filter for OpenAlex API
+   * Updated to handle OpenAlex API filtering requirements properly
    */
   private buildConceptFilter(category: string): string {
-    // Handle different input formats
-    if (category.startsWith('C') && /^C\d+$/.test(category)) {
-      // Already an OpenAlex concept ID
-      return `concepts.id:https://openalex.org/${category}`;
-    } else if (category.startsWith('https://openalex.org/C')) {
-      // Full OpenAlex URL
-      return `concepts.id:${category}`;
-    } else {
-      // Assume it's a concept name or search term
-      return `concepts.display_name.search:${category}`;
+    // Handle different input formats - be more robust about concept filtering
+    const trimmedCategory = category.trim();
+    
+    // Case 1: OpenAlex concept ID (e.g., "C41008148")
+    if (trimmedCategory.startsWith('C') && /^C\d+$/.test(trimmedCategory)) {
+      return `concepts.id:https://openalex.org/${trimmedCategory}`;
+    } 
+    
+    // Case 2: Full OpenAlex URL (e.g., "https://openalex.org/C41008148")
+    else if (trimmedCategory.startsWith('https://openalex.org/C')) {
+      return `concepts.id:${trimmedCategory}`;
+    } 
+    
+    // Case 3: Concept name search (e.g., "computer science", "machine learning")
+    // Use exact display name match first, fallback to search if needed
+    else {
+      // For exact matching of common concepts, use display_name filter
+      const normalizedName = trimmedCategory.toLowerCase();
+      
+      // Map common search terms to exact display names for better results
+      const conceptMapping: Record<string, string> = {
+        'computer science': 'Computer science',
+        'medicine': 'Medicine', 
+        'biology': 'Biology',
+        'physics': 'Physics',
+        'chemistry': 'Chemistry',
+        'economics': 'Economics',
+        'mathematics': 'Mathematics',
+        'psychology': 'Psychology',
+        'engineering': 'Engineering',
+        'philosophy': 'Philosophy',
+        'political science': 'Political science',
+        'materials science': 'Materials science',
+        'art': 'Art',
+        'geography': 'Geography',
+        'business': 'Business',
+        'sociology': 'Sociology',
+        'geology': 'Geology',
+        'history': 'History',
+        'environmental science': 'Environmental science'
+      };
+      
+      if (conceptMapping[normalizedName]) {
+        // Use exact display name match for better precision
+        return `concepts.display_name:"${conceptMapping[normalizedName]}"`;
+      } else {
+        // Fallback to search for other terms
+        // Escape any special characters that might cause 403 errors
+        const escapedCategory = trimmedCategory.replace(/[,&|]/g, '');
+        return `concepts.display_name.search:${escapedCategory}`;
+      }
     }
   }
 
