@@ -295,10 +295,10 @@ async function handleFetchContent(options) {
         console.log(`👥 Authors: ${paper.authors.join(', ')}`);
         console.log(`📅 Date: ${paper.date}`);
         if (paper.pdf_url) {
-            console.log(`🔗 PDF: ${paper.pdf_url}`);
+            console.log(`   🔗 PDF: ${paper.pdf_url}`);
         }
         console.log('');
-        displayTextContent(paper, options.showText || false, options.textPreview);
+        displayTextContent(paper, true, options.textPreview);
     }
     catch (error) {
         logError('Failed to fetch paper content', {
