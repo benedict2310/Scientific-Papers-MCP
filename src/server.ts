@@ -42,7 +42,7 @@ async function startMCPServer() {
 
   const server = new McpServer({
     name: "SciHarvester",
-    version: "0.1.20",
+    version: "0.1.27",
   });
 
   // Add list_categories tool

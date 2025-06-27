@@ -71,7 +71,7 @@ export class OpenAlexDriver extends BaseDriver {
    */
   private getRequestHeaders() {
     return {
-      'User-Agent': `SciHarvester-MCP/0.1.20 (mailto:${this.politePoolEmail}); latest-science-mcp`,
+      'User-Agent': `SciHarvester-MCP/0.1.27 (mailto:${this.politePoolEmail}); latest-science-mcp`,
       'Accept': 'application/json'
     };
   }
