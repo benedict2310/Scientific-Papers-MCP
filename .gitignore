@@ -49,3 +49,7 @@ nyc_output/
 # Test files
 test-results/
 playwright-report/ 
+
+
+examples/blog*
+examples/social-media*
