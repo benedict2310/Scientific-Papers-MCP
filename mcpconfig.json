@@ -1,10 +1,10 @@
 {
     "mcpServers": {
 	"scientific-papers": {
-      "command": "sh",
+      "command": "npx",
       "args": [
-        "-c",
-        "cd /Users/bene/Dev-Source-NoBackup/MCP-tutorial && node dist/server.js 2>&1 | tee /tmp/mcp-server.log"
+        "-y",
+        "@futurelab-studio/latest-science-mcp"
       ]
     }
     }

@@ -12,10 +12,10 @@
 
 | Tool              | Parameters                                                      | Behaviour                                                      |                                                                                               |
 | ----------------- | --------------------------------------------------------------- | -------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
-| `fetch_latest`    | \`{ source:"arxiv"                                              | "openalex", category\:string, count\:number (default 50) }\`   | Return newest *N* papers for the category as `{ id, title, authors, date, pdf_url, text }[]`. |
-| `fetch_top_cited` | `{ concept:string, since:ISO‑date, count:number (default 50) }` | OpenAlex query sorted by `cited_by_count`, same return schema. |                                                                                               |
-| `list_categories` | \`{ source:"arxiv"                                              | "openalex" }\`                                                 | Return cached list of subject codes / concept IDs.                                            |
-| `fetch_content`   | \`{ source:"arxiv"                                              | "openalex", id\:string }\`                                     | Return full metadata and **text** for the specific paper.                                     |
+| `fetch_latest`    | `{ source:"arxiv"                                              | "openalex", category:string, count:number (default 50) }`   | Return newest *N* papers for the category as `{ id, title, authors, date, pdf_url }[]` (metadata only). |
+| `fetch_top_cited` | `{ concept:string, since:ISO‑date, count:number (default 50) }` | OpenAlex query sorted by `cited_by_count`, same return schema (metadata only). |                                                                                               |
+| `list_categories` | `{ source:"arxiv"                                              | "openalex" }`                                                 | Return cached list of subject codes / concept IDs.                                            |
+| `fetch_content`   | `{ source:"arxiv"                                              | "openalex", id:string }`                                     | Return full metadata and **text** for the specific paper.                                     |
 
 ### 1.2 Extraction pipeline
 
@@ -43,7 +43,7 @@ This spins up the Stdio MCP server under the hood, allowing LLMs to access the c
 
 | ID      | Requirement                                                                                                                      |
 | ------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| **F‑1** | `fetch_latest`/`fetch_top_cited` must deliver text for ≥ 90 % of OA items or return a PartialSuccess warning.                    |
+| **F‑1** | `fetch_latest`/`fetch_top_cited` must deliver metadata for ≥ 90 % of OA items or return a PartialSuccess warning.                    |
 | **F‑2** | `fetch_content` must return text if obtainable; if the item is pay‑walled or fails extraction it returns a `NotAvailable` error. |
 | **F‑3** | Respect max 5 req/s per host; exponential back‑off on 429/503.                                                                   |
 | **F‑4** | Response payload ≤ 8 MB to fit within LLM context budgets.                                                                       |

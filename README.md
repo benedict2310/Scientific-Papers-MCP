@@ -26,6 +26,8 @@ To use this server with an MCP client (like Claude Desktop), add the following t
 
 ### For published package (available on npm):
 
+**Option 1: Using npx (simplest)**
+
 ```json
 {
   "mcpServers": {
@@ -34,6 +36,46 @@ To use this server with an MCP client (like Claude Desktop), add the following t
       "args": [
         "-y",
         "@futurelab-studio/latest-science-mcp"
+      ]
+    }
+  }
+}
+```
+
+**Option 2: Global installation**
+
+```bash
+npm install -g @futurelab-studio/latest-science-mcp
+```
+
+Then configure:
+
+```json
+{
+  "mcpServers": {
+    "scientific-papers": {
+      "command": "latest-science-mcp"
+    }
+  }
+}
+```
+
+**Option 3: For Windows/NVM users (if npx doesn't work)**
+
+Find your global npm path:
+```bash
+npm root -g
+```
+
+Then use absolute paths:
+
+```json
+{
+  "mcpServers": {
+    "scientific-papers": {
+      "command": "node",
+      "args": [
+        "C:/path/to/node_modules/@futurelab-studio/latest-science-mcp/dist/server.js"
       ]
     }
   }

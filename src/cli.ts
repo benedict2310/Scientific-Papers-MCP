@@ -368,8 +368,4 @@ async function handleFetchContent(options: CLIOptions) {
   }
 }
 
-// Run CLI - execute unconditionally since this is the CLI entry point
-runCLI().catch((error) => {
-  console.error('Unexpected error:', error);
-  process.exit(1);
-}); 
+runCLI(); 

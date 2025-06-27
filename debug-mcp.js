@@ -1,64 +1,91 @@
+#!/usr/bin/env node
+
 import { spawn } from 'child_process';
 
-// Test the MCP server with tools/list method
-const server = spawn('node', ['dist/server.js'], {
-  stdio: ['pipe', 'pipe', 'inherit']
+console.log('🔍 Testing MCP Server via npx...\n');
+
+// Test 1: Run via npx and see what happens
+console.log('1️⃣ Testing: npx -y @futurelab-studio/latest-science-mcp');
+const npxProcess = spawn('npx', ['-y', '@futurelab-studio/latest-science-mcp'], {
+  stdio: ['pipe', 'pipe', 'pipe']
 });
 
-// Send MCP initialization
-server.stdin.write(JSON.stringify({
-  jsonrpc: "2.0",
-  id: 1,
-  method: "initialize",
-  params: {
-    protocolVersion: "2024-11-05",
-    capabilities: {},
-    clientInfo: {
-      name: "debug-client",
-      version: "1.0.0"
-    }
-  }
-}) + '\n');
+let npxOutput = '';
+let npxError = '';
 
-// Test tools/list method
-setTimeout(() => {
-  server.stdin.write(JSON.stringify({
-    jsonrpc: "2.0",
-    id: 2,
-    method: "tools/list",
-    params: {}
-  }) + '\n');
-}, 500);
+npxProcess.stdout.on('data', (data) => {
+  npxOutput += data.toString();
+  console.log('📤 STDOUT:', data.toString());
+});
 
-// Collect responses
-let responses = '';
-server.stdout.on('data', (data) => {
-  responses += data.toString();
-  const lines = responses.split('\n');
+npxProcess.stderr.on('data', (data) => {
+  npxError += data.toString();
+  console.log('📢 STDERR:', data.toString());
+});
+
+npxProcess.on('close', (code) => {
+  console.log(`\n✅ npx process exited with code: ${code}`);
+  console.log(`📋 Total STDOUT: "${npxOutput}"`);
+  console.log(`📋 Total STDERR: "${npxError}"`);
   
-  lines.forEach(line => {
-    if (line.trim()) {
-      try {
-        const response = JSON.parse(line);
-        console.log('MCP Response for method', response.id === 1 ? 'initialize' : 'tools/list');
-        console.log(JSON.stringify(response, null, 2));
-        console.log('---');
-        
-        if (response.id === 2) {
-          console.log('\n✅ Tools list test complete!');
-          server.kill();
-          process.exit(0);
-        }
-      } catch (e) {
-        // Ignore parsing errors for partial lines
-      }
+  // Now test sending an MCP initialize message
+  console.log('\n2️⃣ Testing: Send MCP initialize message via npx');
+  testMcpProtocol();
+});
+
+function testMcpProtocol() {
+  const mcpProcess = spawn('npx', ['-y', '@futurelab-studio/latest-science-mcp'], {
+    stdio: ['pipe', 'pipe', 'pipe']
+  });
+
+  let mcpOutput = '';
+  let mcpError = '';
+  let processExited = false;
+
+  mcpProcess.stdout.on('data', (data) => {
+    mcpOutput += data.toString();
+    console.log('📤 MCP STDOUT:', data.toString());
+  });
+
+  mcpProcess.stderr.on('data', (data) => {
+    mcpError += data.toString();
+    console.log('📢 MCP STDERR:', data.toString());
+  });
+
+  mcpProcess.on('close', (code) => {
+    processExited = true;
+    console.log(`\n✅ MCP process exited with code: ${code}`);
+    console.log(`📋 Total MCP STDOUT: "${mcpOutput}"`);
+    console.log(`📋 Total MCP STDERR: "${mcpError}"`);
+    
+    if (code !== 0) {
+      console.log('❌ Process exited with non-zero code - this explains the connection closed error!');
     }
   });
-});
 
-// Timeout after 5 seconds
-setTimeout(() => {
-  console.log('❌ Debug test timed out');
-  server.kill();
-  process.exit(1);
-}, 5000); 
+  // Send MCP initialize message
+  const initMessage = JSON.stringify({
+    jsonrpc: "2.0",
+    id: 1,
+    method: "initialize",
+    params: {
+      protocolVersion: "2024-11-05",
+      capabilities: {},
+      clientInfo: {
+        name: "debug-test",
+        version: "1.0.0"
+      }
+    }
+  }) + '\n';
+
+  console.log('📨 Sending initialize message:', initMessage);
+  mcpProcess.stdin.write(initMessage);
+
+  // Wait for response or timeout
+  setTimeout(() => {
+    if (!processExited) {
+      console.log('⏰ Process still running after 3 seconds - this is good!');
+      mcpProcess.kill('SIGTERM');
+    }
+  }, 3000);
+} 
