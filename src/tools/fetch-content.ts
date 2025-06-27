@@ -53,4 +53,16 @@ export async function fetchContent(
     });
     throw error;
   }
+}
+
+// Temporary: Directly print paper text for debugging/direct output
+export async function fetchContentAndPrintText(
+  input: FetchContentInput,
+  rateLimiter: RateLimiter
+): Promise<{ content: PaperMetadata }> {
+  const result = await fetchContent(input, rateLimiter);
+  if (result.content.text) {
+    process.stdout.write(result.content.text);
+  }
+  return result;
 } 

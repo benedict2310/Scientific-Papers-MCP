@@ -26,7 +26,7 @@ To use this server with an MCP client (like Claude Desktop), add the following t
 
 ### For published package (available on npm):
 
-**Option 1: Using npx (simplest)**
+**Option 1: Using npx (recommended for AI tools like Claude)**
 
 ```json
 {
@@ -34,9 +34,12 @@ To use this server with an MCP client (like Claude Desktop), add the following t
     "scientific-papers": {
       "command": "npx",
       "args": [
-        "-y",
+        "--yes",
         "@futurelab-studio/latest-science-mcp"
-      ]
+      ],
+      "env": {
+        "NODE_ENV": "production"
+      }
     }
   }
 }
@@ -422,6 +425,59 @@ The server provides detailed error messages for common issues:
 - API timeouts and server errors
 - Invalid date formats
 - Missing required parameters
+
+## Troubleshooting
+
+### NPX Execution Issues in AI Tools
+
+If the MCP server fails to start when using npx in AI tools like Claude:
+
+1. **Use the recommended configuration** with `--yes` flag and `NODE_ENV`:
+   ```json
+   {
+     "mcpServers": {
+       "scientific-papers": {
+         "command": "npx",
+         "args": ["--yes", "@futurelab-studio/latest-science-mcp"],
+         "env": { "NODE_ENV": "production" }
+       }
+     }
+   }
+   ```
+
+2. **Alternative: Use absolute node path** (more reliable):
+   ```json
+   {
+     "mcpServers": {
+       "scientific-papers": {
+         "command": "node",
+         "args": ["-e", "import('@futurelab-studio/latest-science-mcp').then(m => m.default())"]
+       }
+     }
+   }
+   ```
+
+3. **For persistent issues, use global installation**:
+   ```bash
+   npm install -g @futurelab-studio/latest-science-mcp
+   ```
+   Then configure:
+   ```json
+   {
+     "mcpServers": {
+       "scientific-papers": {
+         "command": "latest-science-mcp"
+       }
+     }
+   }
+   ```
+
+### Common Issues
+
+- **"Command not found"**: Ensure npm/npx is in PATH
+- **"Permission denied"**: Try global installation method
+- **"Module not found"**: Clear npm cache with `npm cache clean --force`
+- **Connection timeout**: Check network connectivity to npm registry
 
 ## License
 

@@ -22,7 +22,7 @@ function getRateLimiter(): RateLimiter {
 
 const server = new McpServer({
   name: "SciHarvester",
-  version: "0.1.0",
+  version: "0.1.19",
 });
 
 // Add list_categories tool
@@ -219,33 +219,53 @@ server.tool("fetch_content",
 // Start the server
 async function main() {
   try {
-    // Ensure stdio is unbuffered
-    process.stdout.setEncoding('utf8');
-    process.stderr.setEncoding('utf8');
+    logInfo('Starting SciHarvester MCP Server...');
     
+    // Create transport first
     const transport = new StdioServerTransport();
+    logInfo('Transport created, connecting server...');
+    
+    // Connect server to transport
     await server.connect(transport);
+    logInfo('Server connected successfully');
     
-    // Immediately flush to ensure client knows we're ready
-    process.stdout.write('');
-    process.stderr.write("SciHarvester MCP Server started successfully\n");
+    // Handle graceful shutdown
+    const handleShutdown = (signal: string) => {
+      logInfo(`Received ${signal}, shutting down gracefully...`);
+      process.exit(0);
+    };
     
+    process.on('SIGINT', () => handleShutdown('SIGINT'));
+    process.on('SIGTERM', () => handleShutdown('SIGTERM'));
+    process.on('SIGPIPE', () => handleShutdown('SIGPIPE'));
+    
+    logInfo('SciHarvester MCP Server is ready');
+
   } catch (error) {
-    console.error('Failed to start MCP server:', error instanceof Error ? error.message : error);
+    logError('Failed to start MCP server', { 
+      error: error instanceof Error ? error.message : error,
+      stack: error instanceof Error ? error.stack : undefined
+    });
     process.exit(1);
   }
 }
 
-// Handle graceful shutdown
-process.on('SIGINT', () => {
-  process.exit(0);
+// Handle unhandled rejections and exceptions
+process.on('unhandledRejection', (reason, promise) => {
+  logError('Unhandled Rejection', { reason, promise });
+  process.exit(1);
 });
 
-process.on('SIGTERM', () => {
-  process.exit(0);
+process.on('uncaughtException', (error) => {
+  logError('Uncaught Exception', { error: error.message, stack: error.stack });
+  process.exit(1);
 });
 
+// Start the server
 main().catch((error) => {
-  console.error('Unhandled error in main:', error instanceof Error ? error.message : error);
+  logError('Fatal error in main', { 
+    error: error instanceof Error ? error.message : error,
+    stack: error instanceof Error ? error.stack : undefined
+  });
   process.exit(1);
 });
