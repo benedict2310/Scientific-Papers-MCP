@@ -44,8 +44,7 @@ function displayTextContent(paper: any, showText: boolean, textPreview?: number)
     
     console.log(`   📝 Text Content (${paper.text.length} characters):`);
     console.log(`   ${textToShow.split('\n').join('\n   ')}`);
-  } else if (paper.text) {
-    console.log(`   📝 Text extracted (${paper.text.length} characters) - use --show-text to display`);
+  
   } else {
     console.log(`   📝 No text content available`);
   }
