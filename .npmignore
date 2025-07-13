@@ -49,3 +49,5 @@ nyc_output/
 
 # Lock files (package-lock.json should be included, but yarn.lock excluded)
 yarn.lock 
+
+CLAUDE.md
