@@ -1,6 +1,6 @@
 // arXiv Entry to Internal Format
 export interface ArxivEntry {
-  id: string;           // "2401.12345"
+  id: string; // "2401.12345"
   title: string;
   authors: Author[];
   published: string;
@@ -13,9 +13,9 @@ export interface Author {
   affiliation?: string;
 }
 
-// OpenAlex Work to Internal Format  
+// OpenAlex Work to Internal Format
 export interface OpenAlexWork {
-  id: string;           // "W2741809807"
+  id: string; // "W2741809807"
   title: string;
   authorships: Authorship[];
   publication_date: string;
@@ -45,4 +45,4 @@ export interface RateLimiterState {
     maxTokens: number;
     refillRate: number; // tokens per second
   };
-} 
+}

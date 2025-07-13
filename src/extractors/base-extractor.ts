@@ -2,11 +2,11 @@ export interface TextExtractionResult {
   text: string;
   truncated: boolean;
   extractionSuccess: boolean;
-  source: 'arxiv-html' | 'ar5iv' | 'openalex-html' | 'failed';
+  source: "arxiv-html" | "ar5iv" | "openalex-html" | "failed";
 }
 
 export interface ExtractionConfig {
-  maxTextLength: number;      // For 8MB limit
+  maxTextLength: number; // For 8MB limit
   enableArxivFallback: boolean;
   enableOpenAlexExtraction: boolean;
   cleaningOptions: {
@@ -27,25 +27,29 @@ export abstract class BaseExtractor {
 
   protected createFailedResult(): TextExtractionResult {
     return {
-      text: '',
+      text: "",
       truncated: false,
       extractionSuccess: false,
-      source: 'failed'
+      source: "failed",
     };
   }
 
-  protected checkTextLength(text: string): { text: string; truncated: boolean } {
+  protected checkTextLength(text: string): {
+    text: string;
+    truncated: boolean;
+  } {
     if (text.length <= this.config.maxTextLength) {
       return { text, truncated: false };
     }
 
     const truncatedText = text.substring(0, this.config.maxTextLength);
     // Try to cut at word boundary
-    const lastSpaceIndex = truncatedText.lastIndexOf(' ');
-    const finalText = lastSpaceIndex > this.config.maxTextLength * 0.9 
-      ? truncatedText.substring(0, lastSpaceIndex) 
-      : truncatedText;
+    const lastSpaceIndex = truncatedText.lastIndexOf(" ");
+    const finalText =
+      lastSpaceIndex > this.config.maxTextLength * 0.9
+        ? truncatedText.substring(0, lastSpaceIndex)
+        : truncatedText;
 
     return { text: finalText, truncated: true };
   }
-} 
+}

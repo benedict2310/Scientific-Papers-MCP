@@ -43,12 +43,49 @@ async function startMCPServer() {
   const server = new McpServer({
     name: "SciHarvester",
     version: "0.1.27",
+    description: `
+      🔬 SciHarvester: Advanced Scientific Literature Access System
+      
+      A comprehensive MCP server providing LLMs with real-time access to 6 major academic databases:
+      arXiv, OpenAlex, PMC, Europe PMC, bioRxiv/medRxiv, and CORE.
+      
+      📊 CAPABILITIES:
+      • Browse categories and research fields across all sources
+      • Fetch latest papers with full metadata and text content  
+      • Find highly cited influential papers by research concept
+      • Retrieve complete paper content including full text when available
+      
+      🎯 OPTIMAL USAGE PATTERNS:
+      1. Start with list_categories to explore available fields
+      2. Use fetch_latest for current research in specific areas
+      3. Use fetch_top_cited to find influential papers in a field
+      4. Use fetch_content to get full text and detailed analysis
+      
+      ⚡ PERFORMANCE NOTES:
+      • Rate limited to protect source APIs
+      • arXiv and OpenAlex are fastest for large queries
+      • PMC sources provide highest quality full-text content
+      • Start with small counts (5-10) and increase as needed
+      
+      🔍 RESEARCH WORKFLOW:
+      Literature Review → Category Exploration → Latest Papers → Influential Papers → Full Content
+    `,
   });
 
   // Add list_categories tool
   server.tool("list_categories", 
     {
-      source: z.enum(["arxiv", "openalex"]).describe("The data source to fetch categories from: 'arxiv' for arXiv categories (e.g., cs.AI, physics.gen-ph) or 'openalex' for OpenAlex concepts (e.g., C41008148 for Computer Science)")
+      source: z.enum(["arxiv", "openalex", "pmc", "europepmc", "biorxiv", "core"]).describe(`
+        Data source to fetch categories from:
+        • 'arxiv' - arXiv.org preprint categories (physics, computer science, mathematics, etc.)
+        • 'openalex' - OpenAlex research concepts (AI, machine learning, quantum computing, etc.) 
+        • 'pmc' - PubMed Central biomedical categories (medicine, biology, neuroscience, etc.)
+        • 'europepmc' - Europe PMC life sciences categories (similar to PMC but European focus)
+        • 'biorxiv' - bioRxiv/medRxiv preprint categories (biology, medicine preprints)
+        • 'core' - CORE academic paper repository categories (multidisciplinary)
+        
+        USAGE TIP: Always call this first to understand available categories before using fetch_latest.
+      `)
     },
     async ({ source }) => {
       try {
@@ -91,9 +128,44 @@ async function startMCPServer() {
   // Add fetch_latest tool
   server.tool("fetch_latest",
     {
-      source: z.enum(["arxiv", "openalex"]).describe("Data source: 'arxiv' for arXiv papers (sorted by submission date) or 'openalex' for OpenAlex papers (sorted by publication date)"),
-      category: z.string().describe("Category or concept to search for. For arXiv: use category codes like 'cs.AI', 'physics.gen-ph'. For OpenAlex: use concept IDs like 'C41008148' or names like 'machine learning'. Call list_categories first to see available options."),
-      count: z.number().min(1).max(200).default(50).describe("Number of papers to fetch (default: 50, max: 200). Start with smaller numbers (5-10) for initial exploration.")
+      source: z.enum(["arxiv", "openalex", "pmc", "europepmc", "biorxiv", "core"]).describe(`
+        Data source to fetch latest papers from:
+        • 'arxiv' - arXiv.org preprints (physics, CS, math, etc.) - Very fast, comprehensive
+        • 'openalex' - OpenAlex academic papers (all fields) - Massive database, good metadata
+        • 'pmc' - PubMed Central (biomedical) - Full-text open access, high quality
+        • 'europepmc' - Europe PMC (life sciences) - European biomedical literature
+        • 'biorxiv' - bioRxiv/medRxiv preprints - Latest biology/medicine preprints
+        • 'core' - CORE repository (multidisciplinary) - Global academic papers
+        
+        PERFORMANCE TIPS: 
+        - arXiv and OpenAlex are fastest for large queries
+        - PMC sources provide full-text content but slower
+        - Use smaller counts (5-10) initially to test categories
+      `),
+      category: z.string().describe(`
+        Category or field to search within the chosen source:
+        
+        CATEGORY FORMATS BY SOURCE:
+        • arXiv: Use codes like 'cs.AI', 'physics.quan-ph', 'math.NT'
+        • OpenAlex: Use concept names like 'machine learning', 'quantum computing' or IDs like 'C41008148'
+        • PMC: Use names like 'medicine', 'biology', 'neuroscience', 'oncology'
+        • Europe PMC: Similar to PMC - 'medicine', 'genetics', 'immunology'
+        • bioRxiv: Use 'biology', 'neuroscience', 'bioinformatics', 'genetics'
+        • CORE: Use broad terms like 'computer science', 'engineering', 'medicine'
+        
+        IMPORTANT: Call list_categories first to see exact available options for your chosen source.
+      `),
+      count: z.number().min(1).max(200).default(50).describe(`
+        Number of papers to fetch (1-200, default: 50).
+        
+        RECOMMENDED COUNTS:
+        • Initial exploration: 5-10 papers
+        • Research survey: 20-50 papers  
+        • Comprehensive analysis: 50-100 papers
+        • Large dataset: 100-200 papers
+        
+        NOTE: Larger counts take longer and may hit rate limits. Start small and increase as needed.
+      `)
     },
     async ({ source, category, count = 50 }) => {
       try {
@@ -133,12 +205,48 @@ async function startMCPServer() {
     }
   );
 
-  // Add fetch_top_cited tool
+  // Add fetch_top_cited tool  
   server.tool("fetch_top_cited",
     {
-      concept: z.string().describe("Research concept or field to search for. Can be a concept name like 'machine learning', 'artificial intelligence', 'quantum computing' or an OpenAlex concept ID like 'C41008148'. Use list_categories with source='openalex' to explore available concepts."),
-      since: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).describe("Start date in YYYY-MM-DD format (e.g., '2024-01-01'). Only papers published on or after this date will be included. Use recent dates (last 1-2 years) to find current influential work."),
-      count: z.number().min(1).max(200).default(50).describe("Number of papers to fetch (default: 50, max: 200). Start with 10-20 for initial exploration of top papers.")
+      concept: z.string().describe(`
+        Research concept or field to search for highly cited papers.
+        
+        CONCEPT FORMATS:
+        • Natural language: 'machine learning', 'artificial intelligence', 'quantum computing', 'cancer treatment'
+        • OpenAlex concept IDs: 'C41008148' (for specific concepts)
+        • Interdisciplinary terms: 'computational biology', 'materials science', 'climate change'
+        
+        EXAMPLES BY FIELD:
+        • AI/CS: 'deep learning', 'natural language processing', 'computer vision'
+        • Medicine: 'immunotherapy', 'precision medicine', 'covid-19'  
+        • Physics: 'quantum computing', 'gravitational waves', 'dark matter'
+        • Biology: 'crispr', 'gene therapy', 'synthetic biology'
+        
+        TIP: Use list_categories with source='openalex' to explore available research concepts.
+      `),
+      since: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).describe(`
+        Start date in YYYY-MM-DD format (e.g., '2024-01-01').
+        Only papers published on or after this date will be included.
+        
+        DATE STRATEGY RECOMMENDATIONS:
+        • Current hot topics: Use last 6-12 months (e.g., '2024-06-01')
+        • Established fields: Use last 2-3 years (e.g., '2022-01-01') 
+        • Breakthrough research: Use last 5 years (e.g., '2020-01-01')
+        • Historical analysis: Use older dates as needed
+        
+        NOTE: More recent dates = fewer but more current papers. Older dates = more papers but less current.
+      `),
+      count: z.number().min(1).max(200).default(50).describe(`
+        Number of top cited papers to fetch (1-200, default: 50).
+        
+        RECOMMENDED COUNTS BY USE CASE:
+        • Quick overview: 5-10 papers (most influential recent work)
+        • Literature review: 20-50 papers (comprehensive survey)
+        • Meta-analysis: 50-100 papers (extensive research base)
+        • Complete survey: 100-200 papers (exhaustive coverage)
+        
+        NOTE: Results are ranked by citation count, so you get the most influential papers first.
+      `)
     },
     async ({ concept, since, count = 50 }) => {
       try {
@@ -181,8 +289,41 @@ async function startMCPServer() {
   // Add fetch_content tool
   server.tool("fetch_content",
     {
-      source: z.enum(["arxiv", "openalex"]).describe("Data source where the paper is located: 'arxiv' for arXiv papers or 'openalex' for OpenAlex papers"),
-      paper_id: z.string().describe("Paper ID from the respective source. For arXiv: use format like '2506.21552' (without 'v' version suffix). For OpenAlex: use Work ID like 'W2741809807' (with or without 'https://openalex.org/' prefix). Get these IDs from fetch_latest or fetch_top_cited results.")
+      source: z.enum(["arxiv", "openalex", "pmc", "europepmc", "biorxiv", "core"]).describe(`
+        Data source where the target paper is located:
+        • 'arxiv' - arXiv.org preprints (fast, full-text available)
+        • 'openalex' - OpenAlex academic database (metadata + abstracts)  
+        • 'pmc' - PubMed Central (full-text biomedical papers, slower but comprehensive)
+        • 'europepmc' - Europe PMC (full-text life sciences papers)
+        • 'biorxiv' - bioRxiv/medRxiv preprints (biology/medicine preprints)
+        • 'core' - CORE repository (academic papers, variable text availability)
+        
+        CONTENT AVAILABILITY:
+        - arXiv, PMC, Europe PMC: Usually provide full paper text
+        - OpenAlex: Provides abstracts and rich metadata
+        - bioRxiv, CORE: Variable full-text availability
+      `),
+      paper_id: z.string().describe(`
+        Paper ID from the respective source (obtain from fetch_latest or fetch_top_cited results):
+        
+        ID FORMATS BY SOURCE:
+        • arXiv: '2506.21552', '1234.5678v2' (arXiv ID format)
+        • OpenAlex: 'W2741809807' (Work ID starting with 'W')
+        • PMC: 'PMC1234567' or '1234567' (PMC ID with or without prefix)
+        • Europe PMC: 'PMC1234567', 'PMID:12345678', or DOI
+        • bioRxiv: DOI format like '10.1101/2024.01.01.123456'
+        • CORE: Usually numeric ID or DOI
+        
+        IMPORTANT: 
+        - Copy exact IDs from previous fetch_latest/fetch_top_cited results
+        - Don't modify ID formats - use them exactly as provided
+        - For PMC, both 'PMC1234567' and '1234567' formats work
+        
+        USAGE WORKFLOW:
+        1. Use fetch_latest or fetch_top_cited to find papers
+        2. Copy the 'id' field from results  
+        3. Use that exact ID with matching source in fetch_content
+      `)
     },
     async ({ source, paper_id }) => {
               try {

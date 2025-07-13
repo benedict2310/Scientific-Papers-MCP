@@ -169,12 +169,12 @@ async function runCLI() {
 async function handleListCategories(options: CLIOptions) {
   if (!options.source) {
     console.error('Error: --source is required for list-categories command');
-    console.error('Valid sources: arxiv, openalex');
+    console.error('Valid sources: arxiv, openalex, pmc, europepmc, biorxiv, core');
     process.exit(1);
   }
 
-  if (options.source !== 'arxiv' && options.source !== 'openalex') {
-    console.error(`Error: Invalid source "${options.source}". Valid sources: arxiv, openalex`);
+  if (options.source !== 'arxiv' && options.source !== 'openalex' && options.source !== 'pmc' && options.source !== 'europepmc' && options.source !== 'biorxiv' && options.source !== 'core') {
+    console.error(`Error: Invalid source "${options.source}". Valid sources: arxiv, openalex, pmc, europepmc, biorxiv, core`);
     process.exit(1);
   }
 
@@ -207,7 +207,7 @@ async function handleListCategories(options: CLIOptions) {
 async function handleFetchLatest(options: CLIOptions) {
   if (!options.source) {
     console.error('Error: --source is required for fetch-latest command');
-    console.error('Valid sources: arxiv, openalex');
+    console.error('Valid sources: arxiv, openalex, pmc, europepmc, biorxiv, core');
     process.exit(1);
   }
 
@@ -216,8 +216,8 @@ async function handleFetchLatest(options: CLIOptions) {
     process.exit(1);
   }
 
-  if (options.source !== 'arxiv' && options.source !== 'openalex') {
-    console.error(`Error: Invalid source "${options.source}". Valid sources: arxiv, openalex`);
+  if (options.source !== 'arxiv' && options.source !== 'openalex' && options.source !== 'pmc' && options.source !== 'europepmc' && options.source !== 'biorxiv' && options.source !== 'core') {
+    console.error(`Error: Invalid source "${options.source}". Valid sources: arxiv, openalex, pmc, europepmc, biorxiv, core`);
     process.exit(1);
   }
 
@@ -318,7 +318,7 @@ async function handleFetchTopCited(options: CLIOptions) {
 async function handleFetchContent(options: CLIOptions) {
   if (!options.source) {
     console.error('Error: --source is required for fetch-content command');
-    console.error('Valid sources: arxiv, openalex');
+    console.error('Valid sources: arxiv, openalex, pmc, europepmc, biorxiv, core');
     process.exit(1);
   }
 
@@ -328,8 +328,8 @@ async function handleFetchContent(options: CLIOptions) {
     process.exit(1);
   }
 
-  if (options.source !== 'arxiv' && options.source !== 'openalex') {
-    console.error(`Error: Invalid source "${options.source}". Valid sources: arxiv, openalex`);
+  if (options.source !== 'arxiv' && options.source !== 'openalex' && options.source !== 'pmc' && options.source !== 'europepmc' && options.source !== 'biorxiv' && options.source !== 'core') {
+    console.error(`Error: Invalid source "${options.source}". Valid sources: arxiv, openalex, pmc, europepmc, biorxiv, core`);
     process.exit(1);
   }
 

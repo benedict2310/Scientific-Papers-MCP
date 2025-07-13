@@ -1,8 +1,12 @@
-import * as cheerio from 'cheerio';
-import axios from 'axios';
-import { BaseExtractor, TextExtractionResult, ExtractionConfig } from './base-extractor.js';
-import { TextCleaner } from './text-cleaner.js';
-import { logger } from '../core/logger.js';
+import * as cheerio from "cheerio";
+import axios from "axios";
+import {
+  BaseExtractor,
+  TextExtractionResult,
+  ExtractionConfig,
+} from "./base-extractor.js";
+import { TextCleaner } from "./text-cleaner.js";
+import { logger } from "../core/logger.js";
 
 export class HtmlExtractor extends BaseExtractor {
   private textCleaner: TextCleaner;
@@ -14,30 +18,35 @@ export class HtmlExtractor extends BaseExtractor {
 
   async extractText(url: string): Promise<TextExtractionResult> {
     try {
-      logger.info('Starting HTML text extraction', { url });
+      logger.info("Starting HTML text extraction", { url });
 
       // Determine extraction strategy based on URL
-      if (url.includes('arxiv.org') || url.includes('ar5iv.labs.arxiv.org')) {
+      if (url.includes("arxiv.org") || url.includes("ar5iv.labs.arxiv.org")) {
         return await this.extractArxivText(url);
       } else {
         return await this.extractOpenAlexText(url);
       }
     } catch (error) {
-      logger.error('HTML text extraction failed', { url, error: (error as Error).message });
+      logger.error("HTML text extraction failed", {
+        url,
+        error: (error as Error).message,
+      });
       return this.createFailedResult();
     }
   }
 
   private async extractArxivText(url: string): Promise<TextExtractionResult> {
     let htmlContent: string;
-    let source: 'arxiv-html' | 'ar5iv' = 'arxiv-html';
+    let source: "arxiv-html" | "ar5iv" = "arxiv-html";
 
     try {
       // Try main arXiv HTML first
       htmlContent = await this.fetchHtml(url);
     } catch (error) {
       if (!this.config.enableArxivFallback) {
-        logger.warn('arXiv HTML extraction failed and fallback disabled', { url });
+        logger.warn("arXiv HTML extraction failed and fallback disabled", {
+          url,
+        });
         return this.createFailedResult();
       }
 
@@ -45,15 +54,15 @@ export class HtmlExtractor extends BaseExtractor {
       try {
         const arxivId = this.extractArxivId(url);
         const fallbackUrl = `https://ar5iv.labs.arxiv.org/html/${arxivId}`;
-        logger.info('Trying ar5iv fallback', { originalUrl: url, fallbackUrl });
-        
+        logger.info("Trying ar5iv fallback", { originalUrl: url, fallbackUrl });
+
         htmlContent = await this.fetchHtml(fallbackUrl);
-        source = 'ar5iv';
+        source = "ar5iv";
       } catch (fallbackError) {
-        logger.error('Both arXiv and ar5iv extraction failed', { 
-          url, 
-          originalError: (error as Error).message, 
-          fallbackError: (fallbackError as Error).message 
+        logger.error("Both arXiv and ar5iv extraction failed", {
+          url,
+          originalError: (error as Error).message,
+          fallbackError: (fallbackError as Error).message,
         });
         return this.createFailedResult();
       }
@@ -62,9 +71,11 @@ export class HtmlExtractor extends BaseExtractor {
     return this.processArxivHtml(htmlContent, source);
   }
 
-  private async extractOpenAlexText(url: string): Promise<TextExtractionResult> {
+  private async extractOpenAlexText(
+    url: string,
+  ): Promise<TextExtractionResult> {
     if (!this.config.enableOpenAlexExtraction) {
-      logger.warn('OpenAlex text extraction disabled', { url });
+      logger.warn("OpenAlex text extraction disabled", { url });
       return this.createFailedResult();
     }
 
@@ -72,7 +83,10 @@ export class HtmlExtractor extends BaseExtractor {
       const htmlContent = await this.fetchHtml(url);
       return this.processOpenAlexHtml(htmlContent);
     } catch (error) {
-      logger.error('OpenAlex HTML extraction failed', { url, error: (error as Error).message });
+      logger.error("OpenAlex HTML extraction failed", {
+        url,
+        error: (error as Error).message,
+      });
       return this.createFailedResult();
     }
   }
@@ -81,8 +95,8 @@ export class HtmlExtractor extends BaseExtractor {
     const response = await axios.get(url, {
       timeout: 10000,
       headers: {
-        'User-Agent': 'Scientific Paper Harvester MCP Server/1.0'
-      }
+        "User-Agent": "Scientific Paper Harvester MCP Server/1.0",
+      },
     });
 
     if (response.status !== 200) {
@@ -92,18 +106,23 @@ export class HtmlExtractor extends BaseExtractor {
     return response.data;
   }
 
-  private processArxivHtml(html: string, source: 'arxiv-html' | 'ar5iv'): TextExtractionResult {
+  private processArxivHtml(
+    html: string,
+    source: "arxiv-html" | "ar5iv",
+  ): TextExtractionResult {
     try {
       const $ = cheerio.load(html);
 
       // Remove unwanted elements
-      $('nav, header, footer, aside, script, style, .sidebar, .navigation').remove();
+      $(
+        "nav, header, footer, aside, script, style, .sidebar, .navigation",
+      ).remove();
 
       // arXiv/ar5iv specific selectors
-      let content = '';
-      
+      let content = "";
+
       // Try LaTeX document structure first (common in ar5iv)
-      const latexDoc = $('.ltx_document');
+      const latexDoc = $(".ltx_document");
       if (latexDoc.length > 0) {
         content = latexDoc.text();
       } else {
@@ -113,8 +132,10 @@ export class HtmlExtractor extends BaseExtractor {
           content = article.text();
         } else {
           // Last resort: get body text but try to exclude navigation
-          $('body nav, body header, body footer, body aside, body .sidebar').remove();
-          content = $('body').text();
+          $(
+            "body nav, body header, body footer, body aside, body .sidebar",
+          ).remove();
+          content = $("body").text();
         }
       }
 
@@ -122,22 +143,25 @@ export class HtmlExtractor extends BaseExtractor {
       const cleanedText = this.textCleaner.cleanText(content);
       const { text, truncated } = this.checkTextLength(cleanedText);
 
-      logger.info('arXiv text extraction successful', { 
-        source, 
-        originalLength: content.length, 
+      logger.info("arXiv text extraction successful", {
+        source,
+        originalLength: content.length,
         cleanedLength: cleanedText.length,
         finalLength: text.length,
-        truncated 
+        truncated,
       });
 
       return {
         text,
         truncated,
         extractionSuccess: true,
-        source
+        source,
       };
     } catch (error) {
-      logger.error('arXiv HTML processing failed', { source, error: (error as Error).message });
+      logger.error("arXiv HTML processing failed", {
+        source,
+        error: (error as Error).message,
+      });
       return this.createFailedResult();
     }
   }
@@ -147,65 +171,76 @@ export class HtmlExtractor extends BaseExtractor {
       const $ = cheerio.load(html);
 
       // Remove unwanted elements
-      $('nav, header, footer, aside, script, style, .sidebar, .navigation').remove();
+      $(
+        "nav, header, footer, aside, script, style, .sidebar, .navigation",
+      ).remove();
 
       // Common academic paper selectors
-      let content = '';
-      
+      let content = "";
+
       const contentSelectors = [
-        'article',
+        "article",
         '[role="main"]',
-        '.paper-content',
-        '.article-body',
-        '.content',
-        'main',
-        '#content',
-        '.paper-text',
-        '.fulltext'
+        ".paper-content",
+        ".article-body",
+        ".content",
+        "main",
+        "#content",
+        ".paper-text",
+        ".fulltext",
       ];
 
       for (const selector of contentSelectors) {
         const element = $(selector);
-        if (element.length > 0 && element.text().trim().length > content.length) {
+        if (
+          element.length > 0 &&
+          element.text().trim().length > content.length
+        ) {
           content = element.text();
         }
       }
 
       // Fallback if no specific content found
       if (!content.trim()) {
-        $('body nav, body header, body footer, body aside, body .sidebar').remove();
-        content = $('body').text();
+        $(
+          "body nav, body header, body footer, body aside, body .sidebar",
+        ).remove();
+        content = $("body").text();
       }
 
       // Clean the extracted text
       const cleanedText = this.textCleaner.cleanText(content);
       const { text, truncated } = this.checkTextLength(cleanedText);
 
-      logger.info('OpenAlex text extraction successful', { 
-        originalLength: content.length, 
+      logger.info("OpenAlex text extraction successful", {
+        originalLength: content.length,
         cleanedLength: cleanedText.length,
         finalLength: text.length,
-        truncated 
+        truncated,
       });
 
       return {
         text,
         truncated,
         extractionSuccess: true,
-        source: 'openalex-html'
+        source: "openalex-html",
       };
     } catch (error) {
-      logger.error('OpenAlex HTML processing failed', { error: (error as Error).message });
+      logger.error("OpenAlex HTML processing failed", {
+        error: (error as Error).message,
+      });
       return this.createFailedResult();
     }
   }
 
   private extractArxivId(url: string): string {
     // Extract arXiv ID from various URL formats
-    const matches = url.match(/(?:arxiv\.org\/(?:html|abs|pdf)\/|ar5iv\.labs\.arxiv\.org\/html\/)([0-9]{4}\.[0-9]{4,5})/);
+    const matches = url.match(
+      /(?:arxiv\.org\/(?:html|abs|pdf)\/|ar5iv\.labs\.arxiv\.org\/html\/)([0-9]{4}\.[0-9]{4,5})/,
+    );
     if (!matches) {
       throw new Error(`Could not extract arXiv ID from URL: ${url}`);
     }
     return matches[1];
   }
-} 
+}

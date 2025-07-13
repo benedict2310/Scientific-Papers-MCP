@@ -1,5 +1,5 @@
-import { Category, PaperMetadata } from '../types/papers.js';
-import { RateLimiter } from '../core/rate-limiter.js';
+import { Category, PaperMetadata } from "../types/papers.js";
+import { RateLimiter } from "../core/rate-limiter.js";
 
 export abstract class BaseDriver {
   protected rateLimiter: RateLimiter;
@@ -18,7 +18,10 @@ export abstract class BaseDriver {
   /**
    * Fetch latest papers for a given category
    */
-  abstract fetchLatest(category: string, count: number): Promise<PaperMetadata[]>;
+  abstract fetchLatest(
+    category: string,
+    count: number,
+  ): Promise<PaperMetadata[]>;
 
   /**
    * Fetch content for a specific paper by ID
@@ -38,4 +41,4 @@ export abstract class BaseDriver {
   protected getRetryAfter(): number {
     return this.rateLimiter.getRetryAfter(this.source);
   }
-} 
+}
