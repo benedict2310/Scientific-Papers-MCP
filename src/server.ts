@@ -7,6 +7,7 @@ import { listCategories } from "./tools/list-categories.js";
 import { fetchLatest } from "./tools/fetch-latest.js";
 import { fetchTopCited } from "./tools/fetch-top-cited.js";
 import { fetchContent } from "./tools/fetch-content.js";
+import { searchPapers } from "./tools/search-papers.js";
 import { RateLimiter } from "./core/rate-limiter.js";
 import { logInfo, logError } from "./core/logger.js";
 
@@ -348,6 +349,118 @@ async function startMCPServer() {
         logError('Error in fetch_content tool', { 
           error: error instanceof Error ? error.message : error,
           source, id: paper_id 
+        });
+        
+        return {
+          isError: true,
+          content: [
+            {
+              type: "text",
+              text: `Error: ${error instanceof Error ? error.message : String(error)}`
+            }
+          ]
+        };
+      }
+    }
+  );
+
+  // Add search_papers tool
+  server.tool("search_papers",
+    {
+      source: z.enum(["arxiv", "openalex", "europepmc", "core"]).describe(`
+        Data source to search within:
+        • 'arxiv' - arXiv.org preprints (physics, CS, math, etc.) - Fast, comprehensive search
+        • 'openalex' - OpenAlex academic papers (all fields) - Massive database, good search capabilities
+        • 'europepmc' - Europe PMC (life sciences) - Biomedical literature with full-text search
+        • 'core' - CORE repository (multidisciplinary) - Global academic papers with advanced search
+        
+        SEARCH CAPABILITIES BY SOURCE:
+        - arXiv: Title, abstract, author, and general search with Boolean operators
+        - OpenAlex: Title, abstract, author, fulltext, and general search with relevance scoring
+        - Europe PMC: Title, abstract, author, fulltext search with MeSH terms
+        - CORE: Title, abstract, author, fulltext search with advanced query language
+      `),
+      query: z.string().min(1).max(1500).describe(`
+        Search query (max 1500 characters).
+        
+        SEARCH STRATEGIES:
+        • Keywords: 'machine learning', 'climate change', 'quantum computing'
+        • Phrases: Use quotes for exact phrases: '"artificial intelligence"'
+        • Boolean: 'deep learning AND neural networks' (arXiv supports this)
+        • Specific terms: 'CRISPR gene editing', 'COVID-19 treatment'
+        
+        FIELD-SPECIFIC EXAMPLES:
+        • Author search: 'John Smith', 'Smith J'
+        • Title search: 'attention mechanisms', 'transformer architecture'
+        • Abstract search: 'reinforcement learning applications'
+        • Full-text search: 'methodology AND results'
+        
+        TIP: Start with simple keywords and refine based on results.
+      `),
+      field: z.enum(["all", "title", "abstract", "author", "fulltext"]).optional().default("all").describe(`
+        Search field to focus on (default: 'all'):
+        • 'all' - Search across all fields (recommended for discovery)
+        • 'title' - Search only in paper titles (precise, focused results)
+        • 'abstract' - Search only in abstracts (good for content-based discovery)
+        • 'author' - Search by author names (find papers by specific researchers)
+        • 'fulltext' - Search full paper text (comprehensive but slower)
+        
+        USAGE RECOMMENDATIONS:
+        • Discovery: Use 'all' for broad exploration
+        • Precision: Use 'title' for specific topics  
+        • Content: Use 'abstract' for thematic searches
+        • Author tracking: Use 'author' for researcher-specific queries
+        • Deep search: Use 'fulltext' for comprehensive content analysis
+      `),
+      count: z.number().min(1).max(200).default(50).describe(`
+        Number of search results to return (1-200, default: 50).
+        
+        RECOMMENDED COUNTS:
+        • Initial exploration: 5-10 results
+        • Research survey: 20-50 results
+        • Comprehensive analysis: 50-100 results
+        • Large dataset: 100-200 results
+        
+        NOTE: Larger counts take longer and may hit rate limits. Start small and increase as needed.
+      `),
+      sortBy: z.enum(["relevance", "date", "citations"]).optional().default("relevance").describe(`
+        Sort order for results (default: 'relevance'):
+        • 'relevance' - Most relevant to query (best for discovery)
+        • 'date' - Newest papers first (best for current research)
+        • 'citations' - Most cited papers first (best for influential work)
+        
+        AVAILABILITY BY SOURCE:
+        • arXiv: relevance, date (no citation sorting)
+        • OpenAlex: relevance, date, citations (full support)
+        • Europe PMC: relevance, date, citations (full support)
+        • CORE: relevance, date (limited citation support)
+        
+        TIP: Use 'relevance' for exploration, 'date' for current topics, 'citations' for established fields.
+      `)
+    },
+    async ({ source, query, field = "all", count = 50, sortBy = "relevance" }) => {
+      try {
+        logInfo('MCP tool called', { tool: 'search_papers', source, query, field, count, sortBy });
+        
+        const rateLimiter = getRateLimiter();
+        const result = await searchPapers({ source, query, field, count, sortBy }, rateLimiter);
+        
+        return {
+          content: [
+            {
+              type: "text",
+              text: `Found ${result.content.length} papers from ${source} search for "${query}" in ${field} field, sorted by ${sortBy}:`
+            },
+            {
+              type: "text",
+              text: JSON.stringify(result.content, null, 2)
+            }
+          ]
+        };
+      } catch (error) {
+        logError('Error in search_papers tool', { 
+          error: error instanceof Error ? error.message : error,
+          source, query, field, count, sortBy 
         });
         
         return {

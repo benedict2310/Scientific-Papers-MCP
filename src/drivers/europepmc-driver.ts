@@ -404,6 +404,149 @@ export class EuropePMCDriver extends BaseDriver {
   }
 
   /**
+   * Search for papers with query and field-specific options
+   */
+  async searchPapers(
+    query: string,
+    field: string,
+    count: number,
+    sortBy: string,
+  ): Promise<PaperMetadata[]> {
+    if (!this.checkRateLimit()) {
+      const retryAfter = this.getRetryAfter();
+      logWarn("Rate limited when searching Europe PMC papers", {
+        retryAfter,
+        query,
+        field,
+      });
+      throw new Error(`Rate limited. Retry after ${retryAfter} seconds`);
+    }
+
+    try {
+      logInfo("Searching Europe PMC papers", { query, field, count, sortBy });
+
+      // Build search query based on field
+      let searchQuery: string;
+      switch (field) {
+        case "title":
+          searchQuery = `TITLE:"${query}"`;
+          break;
+        case "abstract":
+          searchQuery = `ABSTRACT:"${query}"`;
+          break;
+        case "author":
+          searchQuery = `AUTH:"${query}"`;
+          break;
+        case "fulltext":
+          searchQuery = `FULL_TEXT:"${query}"`;
+          break;
+        case "all":
+        default:
+          searchQuery = `"${query}"`;
+          break;
+      }
+
+      // Add full-text filter for better results
+      searchQuery += " AND has_fulltext:y";
+
+      // Map sortBy to Europe PMC API parameters
+      let sortParam = "relevance";
+      switch (sortBy) {
+        case "date":
+          sortParam = "date desc";
+          break;
+        case "citations":
+          sortParam = "citedby desc";
+          break;
+        case "relevance":
+        default:
+          sortParam = "relevance";
+          break;
+      }
+
+      const response = await axios.get<EuropePMCResponse>(
+        `${this.apiBase}/search`,
+        {
+          params: {
+            query: searchQuery,
+            format: "json",
+            pageSize: Math.min(count, 100), // Europe PMC allows up to 100 results per page
+            sort: sortParam,
+            resultType: "core",
+          },
+          timeout: 15000,
+          headers: {
+            "User-Agent":
+              "SciHarvester-MCP/0.1.27 (mailto:contact@sciharvestermcp.org); Europe-PMC-client",
+          },
+        },
+      );
+
+      if (
+        !response.data ||
+        !response.data.resultList ||
+        !response.data.resultList.result
+      ) {
+        logWarn("Europe PMC API returned unexpected response format", {
+          query,
+          field,
+          searchQuery,
+          responseData: response.data,
+        });
+        return [];
+      }
+
+      const results = response.data.resultList.result;
+
+      if (results.length === 0) {
+        logWarn("No Europe PMC papers found for search", {
+          query,
+          field,
+          searchQuery,
+        });
+        return [];
+      }
+
+      // Convert results to PaperMetadata format (metadata only)
+      const validResults = results.filter(
+        (result) => result.title && result.hasFullText === "Y",
+      );
+
+      const papers = await Promise.all(
+        validResults.map((result) => this.convertResultToPaper(result, false)),
+      );
+
+      logInfo("Successfully searched Europe PMC papers", {
+        query,
+        field,
+        count: papers.length,
+        sortBy,
+      });
+
+      return papers;
+    } catch (error) {
+      logError("Failed to search Europe PMC papers", {
+        error: error instanceof Error ? error.message : error,
+        query,
+        field,
+        count,
+        sortBy,
+      });
+
+      if (axios.isAxiosError(error)) {
+        if (error.response?.status === 429) {
+          throw new Error("Rate limited by Europe PMC API");
+        }
+        if (error.response?.status && error.response.status >= 500) {
+          throw new Error("Europe PMC API server error");
+        }
+      }
+
+      throw error;
+    }
+  }
+
+  /**
    * Build search query for Europe PMC based on category
    */
   private buildSearchQuery(category: string): string {

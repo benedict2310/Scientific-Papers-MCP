@@ -344,6 +344,25 @@ export class PMCDriver extends BaseDriver {
   }
 
   /**
+   * Search for papers with query and field-specific options
+   * Note: PMC E-utilities API has limited search capabilities
+   */
+  async searchPapers(
+    query: string,
+    field: string,
+    count: number,
+    sortBy: string,
+  ): Promise<PaperMetadata[]> {
+    // PMC E-utilities API has limited advanced search functionality
+    // This is a placeholder implementation that throws an appropriate error
+    throw new Error(
+      "Advanced search functionality is not fully supported by PMC E-utilities API. " +
+      "The API primarily supports MeSH term searches and basic field searches. " +
+      "Please use fetch_latest with specific medical categories instead, or try EuropePMC for advanced search."
+    );
+  }
+
+  /**
    * Build search query for PMC based on category
    */
   private buildSearchQuery(category: string): string {

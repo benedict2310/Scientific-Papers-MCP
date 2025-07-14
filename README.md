@@ -14,6 +14,7 @@ A comprehensive Model Context Protocol (MCP) server that provides LLMs with real
 
 ### **Advanced Capabilities**
 - **Paper Fetching**: Get latest papers from any source by category/concept
+- **Paper Search**: Search papers by title, abstract, author, or full-text across 4 major sources
 - **Full-Text Extraction**: Extract complete text content with intelligent fallback strategies
 - **Citation Analysis**: Find top cited papers from OpenAlex since a specific date
 - **Paper Lookup**: Retrieve full metadata for specific papers by ID
@@ -130,6 +131,21 @@ node dist/cli.js fetch-top-cited --concept="machine learning" --since=2024-01-01
 node dist/cli.js fetch-top-cited --concept=C41008148 --since=2023-06-01 --count=10
 ```
 
+#### Search Papers
+```bash
+# Search by keywords across all fields
+node dist/cli.js search-papers --source=arxiv --query="machine learning" --count=10
+
+# Search by paper title
+node dist/cli.js search-papers --source=openalex --query="neural networks" --field=title --count=5
+
+# Search by author name
+node dist/cli.js search-papers --source=europepmc --query="John Smith" --field=author --count=10
+
+# Search full-text content sorted by citations
+node dist/cli.js search-papers --source=core --query="climate change" --field=fulltext --sortBy=citations --count=20
+```
+
 #### Fetch Specific Paper Content
 ```bash
 # Get arXiv paper by ID
@@ -199,6 +215,33 @@ Fetches the top cited papers from OpenAlex for a given concept since a specific 
 - `concept`: Concept name or OpenAlex concept ID
 - `since`: Start date in YYYY-MM-DD format
 - `count`: Number of papers to fetch (default: 50, max: 200)
+
+### `search_papers`
+
+Searches for papers across multiple academic sources with field-specific search and sorting options.
+
+**Parameters:**
+- `source`: `"arxiv"` | `"openalex"` | `"europepmc"` | `"core"`
+- `query`: Search query string (max 1500 characters)
+- `field`: `"all"` | `"title"` | `"abstract"` | `"author"` | `"fulltext"` (default: "all")
+- `count`: Number of results to return (default: 50, max: 200)
+- `sortBy`: `"relevance"` | `"date"` | `"citations"` (default: "relevance")
+
+**Search Capabilities by Source:**
+- **arXiv**: Title, abstract, author, and general search with Boolean operators
+- **OpenAlex**: Advanced search with relevance scoring and citation sorting
+- **Europe PMC**: Biomedical literature with MeSH terms and full-text search
+- **CORE**: Global academic papers with advanced query language
+
+**Example Queries:**
+- Keywords: `"machine learning"`, `"climate change"`
+- Phrases: `"artificial intelligence"` (use quotes for exact phrases)
+- Boolean: `"deep learning AND neural networks"` (arXiv supports this)
+- Authors: `"John Smith"`, `"Smith J"`
+
+**Returns:**
+- Array of paper objects with metadata (id, title, authors, date, pdf_url)
+- **Text field**: Empty string (`text: ""`) - use `fetch_content` for full text
 
 ### `fetch_content`
 
@@ -318,14 +361,14 @@ npm run test -- tests/integration/performance.test.ts
 
 ## 📊 Source Comparison
 
-| Source | Papers | Disciplines | Full-Text | Citation Data | Preprints |
-|--------|--------|-------------|-----------|---------------|-----------|
-| arXiv | 2.3M+ | STEM | HTML ✓ | Limited | ✓ |
-| OpenAlex | 200M+ | All | Variable | ✓✓✓ | ✓ |
-| PMC | 7M+ | Biomedical | XML/HTML ✓ | Limited | ✗ |
-| Europe PMC | 40M+ | Life Sciences | HTML ✓ | Limited | ✓ |
-| bioRxiv/medRxiv | 500K+ | Bio/Medical | HTML ✓ | Limited | ✓✓✓ |
-| CORE | 200M+ | All | PDF/HTML ✓ | Limited | ✓ |
+| Source | Papers | Disciplines | Full-Text | Citation Data | Preprints | Search |
+|--------|--------|-------------|-----------|---------------|-----------|--------|
+| arXiv | 2.3M+ | STEM | HTML ✓ | Limited | ✓ | ✓✓✓ |
+| OpenAlex | 200M+ | All | Variable | ✓✓✓ | ✓ | ✓✓✓ |
+| PMC | 7M+ | Biomedical | XML/HTML ✓ | Limited | ✗ | Limited |
+| Europe PMC | 40M+ | Life Sciences | HTML ✓ | Limited | ✓ | ✓✓✓ |
+| bioRxiv/medRxiv | 500K+ | Bio/Medical | HTML ✓ | Limited | ✓✓✓ | Limited |
+| CORE | 200M+ | All | PDF/HTML ✓ | Limited | ✓ | ✓✓✓ |
 
 ## 🔧 Development
 
@@ -340,6 +383,10 @@ npm run build
 node dist/cli.js list-categories --source=arxiv
 node dist/cli.js fetch-latest --source=biorxiv --category="biorxiv:biology" --count=3
 node dist/cli.js fetch-content --source=core --id=12345678
+
+# Test search functionality
+node dist/cli.js search-papers --source=arxiv --query="artificial intelligence" --count=5
+node dist/cli.js search-papers --source=openalex --query="quantum computing" --field=title --count=3
 ```
 
 ### Performance Testing

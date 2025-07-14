@@ -510,6 +510,155 @@ export class CoreDriver extends BaseDriver {
   }
 
   /**
+   * Search for papers with query and field-specific options
+   */
+  async searchPapers(
+    query: string,
+    field: string,
+    count: number,
+    sortBy: string,
+  ): Promise<PaperMetadata[]> {
+    if (!this.checkRateLimit()) {
+      const retryAfter = this.getRetryAfter();
+      logWarn("Rate limited when searching CORE papers", {
+        retryAfter,
+        query,
+        field,
+      });
+      throw new Error(`Rate limited. Retry after ${retryAfter} seconds`);
+    }
+
+    try {
+      logInfo("Searching CORE papers", { query, field, count, sortBy });
+
+      // Build search query based on field
+      let searchQuery: string;
+      switch (field) {
+        case "title":
+          searchQuery = `title:"${query}"`;
+          break;
+        case "abstract":
+          searchQuery = `abstract:"${query}"`;
+          break;
+        case "author":
+          searchQuery = `authors:"${query}"`;
+          break;
+        case "fulltext":
+          searchQuery = `fullText:"${query}"`;
+          break;
+        case "all":
+        default:
+          searchQuery = `"${query}"`;
+          break;
+      }
+
+      // Map sortBy to CORE API parameters
+      let sortParam = "relevance";
+      switch (sortBy) {
+        case "date":
+          sortParam = "publishedDate:desc";
+          break;
+        case "citations":
+          // CORE doesn't have citation count sorting, fall back to relevance
+          sortParam = "relevance";
+          break;
+        case "relevance":
+        default:
+          sortParam = "relevance";
+          break;
+      }
+
+      const headers: Record<string, string> = {
+        "User-Agent":
+          "SciHarvester-MCP/0.1.27 (mailto:contact@sciharvestermcp.org); CORE-client",
+      };
+
+      if (this.apiKey) {
+        headers["Authorization"] = `Bearer ${this.apiKey}`;
+      }
+
+      const response = await axios.post<CoreSearchResponse>(
+        `${this.apiBase}/search/works`,
+        {
+          q: searchQuery,
+          limit: Math.min(count, 100), // CORE allows up to 100 results per request
+          offset: 0,
+          sort: sortParam,
+          // Only include papers with full text available
+          exclude_without_fulltext: true,
+        },
+        {
+          timeout: 15000,
+          headers,
+        },
+      );
+
+      if (!response.data || !response.data.results) {
+        logWarn("CORE API returned unexpected response format", {
+          query,
+          field,
+          searchQuery,
+          responseData: response.data,
+        });
+        return [];
+      }
+
+      const results = response.data.results;
+
+      if (results.length === 0) {
+        logWarn("No CORE papers found for search", {
+          query,
+          field,
+          searchQuery,
+        });
+        return [];
+      }
+
+      // Convert results to PaperMetadata format (metadata only)
+      const validResults = results.filter(
+        (result) => result.title && result.id,
+      );
+
+      const papers = await Promise.all(
+        validResults.map((result) =>
+          this.convertPaperToMetadata(result, false),
+        ),
+      );
+
+      logInfo("Successfully searched CORE papers", {
+        query,
+        field,
+        count: papers.length,
+        sortBy,
+      });
+
+      return papers;
+    } catch (error) {
+      logError("Failed to search CORE papers", {
+        error: error instanceof Error ? error.message : error,
+        query,
+        field,
+        count,
+        sortBy,
+      });
+
+      if (axios.isAxiosError(error)) {
+        if (error.response?.status === 401) {
+          throw new Error("CORE API authentication failed. Check API key.");
+        }
+        if (error.response?.status === 429) {
+          throw new Error("Rate limited by CORE API");
+        }
+        if (error.response?.status && error.response.status >= 500) {
+          throw new Error("CORE API server error");
+        }
+      }
+
+      throw error;
+    }
+  }
+
+  /**
    * Build search query for CORE based on category
    */
   private buildSearchQuery(category: string): string {

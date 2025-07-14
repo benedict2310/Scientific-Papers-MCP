@@ -29,6 +29,16 @@ export abstract class BaseDriver {
   abstract fetchContent(id: string): Promise<PaperMetadata>;
 
   /**
+   * Search for papers with query and field-specific options
+   */
+  abstract searchPapers(
+    query: string,
+    field: string,
+    count: number,
+    sortBy: string,
+  ): Promise<PaperMetadata[]>;
+
+  /**
    * Check rate limit before making requests
    */
   protected checkRateLimit(): boolean {

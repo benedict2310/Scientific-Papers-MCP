@@ -664,6 +664,121 @@ export class OpenAlexDriver extends BaseDriver {
   }
 
   /**
+   * Search for papers with query and field-specific options
+   */
+  async searchPapers(
+    query: string,
+    field: string,
+    count: number,
+    sortBy: string,
+  ): Promise<PaperMetadata[]> {
+    if (!this.checkRateLimit()) {
+      const retryAfter = this.getRetryAfter();
+      logWarn("Rate limited when searching OpenAlex papers", {
+        retryAfter,
+        query,
+        field,
+      });
+      throw new Error(`Rate limited. Retry after ${retryAfter} seconds`);
+    }
+
+    try {
+      logInfo("Searching OpenAlex papers", { query, field, count, sortBy });
+
+      // Build search query based on field
+      let searchQuery: string;
+      switch (field) {
+        case "title":
+          searchQuery = `display_name.search:${query}`;
+          break;
+        case "abstract":
+          searchQuery = `abstract.search:${query}`;
+          break;
+        case "author":
+          // For author search, we need to search by author names
+          searchQuery = `authorships.author.display_name.search:${query}`;
+          break;
+        case "fulltext":
+          searchQuery = `fulltext.search:${query}`;
+          break;
+        case "all":
+        default:
+          searchQuery = `search:${query}`;
+          break;
+      }
+
+      // Map sortBy to OpenAlex API parameters
+      let sortParam = "relevance_score:desc";
+      switch (sortBy) {
+        case "date":
+          sortParam = "publication_date:desc";
+          break;
+        case "citations":
+          sortParam = "cited_by_count:desc";
+          break;
+        case "relevance":
+        default:
+          sortParam = "relevance_score:desc";
+          break;
+      }
+
+      const response = await axios.get<OpenAlexWorksResponse>(
+        `${OPENALEX_API_BASE}/works`,
+        {
+          params: this.getRequestParams({
+            filter: searchQuery,
+            sort: sortParam,
+            per_page: Math.min(count, 200), // OpenAlex max per_page is 200
+            select:
+              "id,title,display_name,publication_date,doi,authorships,primary_location,best_oa_location,locations,open_access,cited_by_count,concepts",
+          }),
+          timeout: 15000,
+          headers: this.getRequestHeaders(),
+        },
+      );
+
+      // Process works in parallel for better performance (metadata only)
+      const paperPromises = response.data.results.map((work) =>
+        this.convertWorkToPaper(work, false),
+      );
+      const papers = await Promise.all(paperPromises);
+
+      logInfo("Successfully searched OpenAlex papers", {
+        query,
+        field,
+        count: papers.length,
+        sortBy,
+      });
+
+      return papers;
+    } catch (error) {
+      logError("Failed to search OpenAlex papers", {
+        error: error instanceof Error ? error.message : error,
+        query,
+        field,
+        count,
+        sortBy,
+      });
+
+      if (axios.isAxiosError(error)) {
+        if (error.response?.status === 403) {
+          throw new Error(
+            `OpenAlex API access forbidden - invalid search query: ${query}`,
+          );
+        }
+        if (error.response?.status === 429) {
+          throw new Error("Rate limited by OpenAlex API");
+        }
+        if (error.response?.status && error.response.status >= 500) {
+          throw new Error("OpenAlex API server error");
+        }
+      }
+
+      throw error;
+    }
+  }
+
+  /**
    * Extract concept ID from OpenAlex URL format
    * e.g., "https://openalex.org/C41008148" -> "C41008148"
    */

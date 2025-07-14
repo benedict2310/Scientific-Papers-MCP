@@ -637,6 +637,25 @@ export class BioRxivDriver extends BaseDriver {
   }
 
   /**
+   * Search for papers with query and field-specific options
+   * Note: bioRxiv/medRxiv API has limited search capabilities
+   */
+  async searchPapers(
+    query: string,
+    field: string,
+    count: number,
+    sortBy: string,
+  ): Promise<PaperMetadata[]> {
+    // bioRxiv/medRxiv API does not support advanced search functionality
+    // This is a placeholder implementation that throws an appropriate error
+    throw new Error(
+      "Search functionality is not supported by bioRxiv/medRxiv API. " +
+      "The API only supports date-based retrieval and category filtering. " +
+      "Please use fetch_latest with specific categories instead."
+    );
+  }
+
+  /**
    * Convert bioRxiv/medRxiv paper to PaperMetadata format
    */
   private async convertPaperToMetadata(

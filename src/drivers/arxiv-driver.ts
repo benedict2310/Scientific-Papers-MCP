@@ -345,6 +345,110 @@ export class ArxivDriver extends BaseDriver {
   }
 
   /**
+   * Search for papers with query and field-specific options
+   */
+  async searchPapers(
+    query: string,
+    field: string,
+    count: number,
+    sortBy: string,
+  ): Promise<PaperMetadata[]> {
+    if (!this.checkRateLimit()) {
+      const retryAfter = this.getRetryAfter();
+      logWarn("Rate limited when searching arXiv papers", {
+        retryAfter,
+        query,
+        field,
+      });
+      throw new Error(`Rate limited. Retry after ${retryAfter} seconds`);
+    }
+
+    try {
+      logInfo("Searching arXiv papers", { query, field, count, sortBy });
+
+      // Build search query based on field
+      let searchQuery: string;
+      switch (field) {
+        case "title":
+          searchQuery = `ti:"${query}"`;
+          break;
+        case "abstract":
+          searchQuery = `abs:"${query}"`;
+          break;
+        case "author":
+          searchQuery = `au:"${query}"`;
+          break;
+        case "all":
+        default:
+          searchQuery = `all:"${query}"`;
+          break;
+      }
+
+      // Map sortBy to arXiv API parameters
+      let sortByParam = "relevance";
+      let sortOrderParam = "descending";
+      
+      switch (sortBy) {
+        case "date":
+          sortByParam = "submittedDate";
+          sortOrderParam = "descending";
+          break;
+        case "relevance":
+        default:
+          sortByParam = "relevance";
+          sortOrderParam = "descending";
+          break;
+        // arXiv doesn't support citation sorting
+      }
+
+      const response = await axios.get(`${ARXIV_API_BASE}`, {
+        params: {
+          search_query: searchQuery,
+          start: 0,
+          max_results: count,
+          sortBy: sortByParam,
+          sortOrder: sortOrderParam,
+        },
+        timeout: 15000,
+        headers: {
+          "User-Agent":
+            "latest-science-mcp/0.1.0 (https://github.com/futurelab/latest-science-mcp)",
+        },
+      });
+
+      // Parse XML response
+      const papers = await this.parseArxivResponse(response.data, false);
+      logInfo("Successfully searched arXiv papers", {
+        query,
+        field,
+        count: papers.length,
+        sortBy,
+      });
+
+      return papers;
+    } catch (error) {
+      logError("Failed to search arXiv papers", {
+        error: error instanceof Error ? error.message : error,
+        query,
+        field,
+        count,
+        sortBy,
+      });
+
+      if (axios.isAxiosError(error)) {
+        if (error.code === "ECONNABORTED") {
+          throw new Error("arXiv API request timed out");
+        }
+        if (error.response?.status && error.response.status >= 500) {
+          throw new Error("arXiv API server error");
+        }
+      }
+
+      throw error;
+    }
+  }
+
+  /**
    * Future method: Fetch categories dynamically from arXiv
    * This could be implemented later if arXiv provides a categories endpoint
    */
