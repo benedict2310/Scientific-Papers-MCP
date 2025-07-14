@@ -43,7 +43,7 @@ async function startMCPServer() {
 
   const server = new McpServer({
     name: "SciHarvester",
-    version: "0.1.27",
+    version: "0.1.30",
     description: `
       🔬 SciHarvester: Advanced Scientific Literature Access System
       
