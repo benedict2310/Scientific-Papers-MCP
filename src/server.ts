@@ -20,8 +20,8 @@ const shouldRunCLI = args.length > 0;
 
 if (shouldRunCLI) {
   // Import and run CLI
-  import('./cli.js').then(cliModule => {
-    cliModule.runCLI();
+  import('./cli.js').then(async cliModule => {
+    await cliModule.runCLI();
   }).catch(error => {
     logError('Failed to load CLI module', { error: error.message });
     process.exit(1);
