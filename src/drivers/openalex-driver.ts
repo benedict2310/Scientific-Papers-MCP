@@ -685,28 +685,6 @@ export class OpenAlexDriver extends BaseDriver {
     try {
       logInfo("Searching OpenAlex papers", { query, field, count, sortBy });
 
-      // Build search query based on field
-      let searchQuery: string;
-      switch (field) {
-        case "title":
-          searchQuery = `display_name.search:${query}`;
-          break;
-        case "abstract":
-          searchQuery = `abstract.search:${query}`;
-          break;
-        case "author":
-          // For author search, we need to search by author names
-          searchQuery = `authorships.author.display_name.search:${query}`;
-          break;
-        case "fulltext":
-          searchQuery = `fulltext.search:${query}`;
-          break;
-        case "all":
-        default:
-          searchQuery = `search:${query}`;
-          break;
-      }
-
       // Map sortBy to OpenAlex API parameters
       let sortParam = "relevance_score:desc";
       switch (sortBy) {
@@ -722,16 +700,19 @@ export class OpenAlexDriver extends BaseDriver {
           break;
       }
 
+      // For now, use general search for all fields to avoid 403 errors
+      // TODO: Implement field-specific search properly
+      const requestParams = {
+        search: query,
+        sort: sortParam,
+        per_page: Math.min(count, 200),
+        select: "id,title,display_name,publication_date,doi,authorships,primary_location,best_oa_location,locations,open_access,cited_by_count,concepts",
+      };
+
       const response = await axios.get<OpenAlexWorksResponse>(
         `${OPENALEX_API_BASE}/works`,
         {
-          params: this.getRequestParams({
-            filter: searchQuery,
-            sort: sortParam,
-            per_page: Math.min(count, 200), // OpenAlex max per_page is 200
-            select:
-              "id,title,display_name,publication_date,doi,authorships,primary_location,best_oa_location,locations,open_access,cited_by_count,concepts",
-          }),
+          params: this.getRequestParams(requestParams),
           timeout: 15000,
           headers: this.getRequestHeaders(),
         },
