@@ -269,7 +269,7 @@ export class ArxivDriver extends BaseDriver {
           if (this.checkRateLimit()) {
             const htmlUrl = `${ARXIV_HTML_BASE}/${id}`;
             const extractionResult =
-              await this.textExtractor.extractText(htmlUrl);
+              await this.textExtractor.extractText(htmlUrl, pdf_url);
 
             if (extractionResult.extractionSuccess) {
               paper.text = extractionResult.text;
@@ -279,6 +279,7 @@ export class ArxivDriver extends BaseDriver {
                 textLength: paper.text.length,
                 truncated: textTruncated,
                 source: extractionResult.source,
+                extractionMethod: extractionResult.source === "pdf" ? "PDF fallback" : "HTML primary",
               });
             } else {
               textExtractionFailed = true;

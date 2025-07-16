@@ -40,6 +40,7 @@ export const DEFAULT_TEXT_EXTRACTION_CONFIG = {
   maxTextLength: 6 * 1024 * 1024, // 6MB to leave room for metadata in 8MB response
   enableArxivFallback: true,
   enableOpenAlexExtraction: true,
+  enablePdfExtraction: true, // Enable PDF extraction fallback
   cleaningOptions: {
     removeExtraWhitespace: true,
     removeSpecialChars: false, // Keep special chars for scientific content

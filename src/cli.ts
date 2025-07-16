@@ -5,6 +5,7 @@ import { listCategories } from './tools/list-categories.js';
 import { fetchLatest } from './tools/fetch-latest.js';
 import { fetchTopCited } from './tools/fetch-top-cited.js';
 import { fetchContent } from './tools/fetch-content.js';
+import { searchPapers } from './tools/search-papers.js';
 import { RateLimiter } from './core/rate-limiter.js';
 import { logInfo, logError } from './core/logger.js';
 
@@ -15,6 +16,9 @@ interface CLIOptions {
   concept?: string;
   since?: string;
   id?: string;
+  query?: string;
+  field?: string;
+  sortBy?: string;
   count?: number;
   showText?: boolean;
   textPreview?: number;
@@ -59,13 +63,17 @@ Commands:
   fetch-latest        Fetch latest papers from a source and category
   fetch-top-cited     Fetch top cited papers from OpenAlex for a concept since a date
   fetch-content       Fetch full metadata for a specific paper by ID
+  search-papers       Search papers from a source with query and field filtering
 
 Options:
-  --source <source>     Data source: arxiv or openalex
+  --source <source>     Data source: arxiv, openalex, pmc, europepmc, biorxiv, core
   --category <category> Category or concept to search for
   --concept <concept>   Concept or field to search for (OpenAlex only)
   --since <date>        Start date in YYYY-MM-DD format
   --id <id>             Paper ID (arXiv ID like '2401.12345' or OpenAlex Work ID)
+  --query <query>       Search query (max 1500 characters)
+  --field <field>       Search field: all, title, abstract, author, fulltext
+  --sort-by <sort>      Sort order: relevance, date, citations (availability varies)
   --count <number>      Number of papers to fetch (default: 50, max: 200)
   --show-text           Show text content of the paper
   --text-preview <num>  Number of characters to preview in text content
@@ -79,6 +87,8 @@ Examples:
   latest-science-mcp fetch-top-cited --concept="machine learning" --since=2024-01-01 --count=20
   latest-science-mcp fetch-content --source=arxiv --id=2401.12345
   latest-science-mcp fetch-content --source=openalex --id=W2741809807
+  latest-science-mcp search-papers --source=arxiv --query="neural networks" --field=title --count=10
+  latest-science-mcp search-papers --source=openalex --query="machine learning" --field=all --sort-by=citations
 `);
 }
 
@@ -102,6 +112,17 @@ async function runCLI() {
           type: 'string'
         },
         id: {
+          type: 'string'
+        },
+        query: {
+          type: 'string',
+          short: 'q'
+        },
+        field: {
+          type: 'string',
+          short: 'f'
+        },
+        sortBy: {
           type: 'string'
         },
         count: {
@@ -129,6 +150,9 @@ async function runCLI() {
       concept: values.concept,
       since: values.since,
       id: values.id,
+      query: values.query,
+      field: values.field,
+      sortBy: values.sortBy,
       count: values.count ? parseInt(values.count, 10) : undefined,
       showText: values.showText,
       textPreview: values.textPreview ? parseInt(values.textPreview, 10) : undefined,
@@ -152,6 +176,9 @@ async function runCLI() {
         break;
       case 'fetch-content':
         await handleFetchContent(options);
+        break;
+      case 'search-papers':
+        await handleSearchPapers(options);
         break;
       default:
         console.error(`Unknown command: ${options.command}`);
@@ -362,6 +389,82 @@ async function handleFetchContent(options: CLIOptions) {
       error: error instanceof Error ? error.message : error 
     });
     console.error(`Error fetching paper content:`, 
+      error instanceof Error ? error.message : error);
+    process.exit(1);
+  }
+}
+
+async function handleSearchPapers(options: CLIOptions) {
+  if (!options.source) {
+    console.error('Error: --source is required for search-papers command');
+    console.error('Valid sources: arxiv, openalex, europepmc, core');
+    process.exit(1);
+  }
+
+  if (!options.query) {
+    console.error('Error: --query is required for search-papers command');
+    console.error('Example: --query="machine learning"');
+    process.exit(1);
+  }
+
+  if (options.source !== 'arxiv' && options.source !== 'openalex' && options.source !== 'europepmc' && options.source !== 'core') {
+    console.error(`Error: Invalid source "${options.source}". Valid sources: arxiv, openalex, europepmc, core`);
+    process.exit(1);
+  }
+
+  const field = options.field || 'all';
+  const sortBy = options.sortBy || 'relevance';
+  const count = options.count || 50;
+
+  // Validate field
+  const validFields = ['all', 'title', 'abstract', 'author', 'fulltext'];
+  if (!validFields.includes(field)) {
+    console.error(`Error: Invalid field "${field}". Valid fields: ${validFields.join(', ')}`);
+    process.exit(1);
+  }
+
+  // Validate sortBy
+  const validSortBy = ['relevance', 'date', 'citations'];
+  if (!validSortBy.includes(sortBy)) {
+    console.error(`Error: Invalid sort order "${sortBy}". Valid options: ${validSortBy.join(', ')}`);
+    process.exit(1);
+  }
+
+  logInfo('CLI command called', { command: 'search-papers', source: options.source, query: options.query, field, sortBy, count });
+
+  try {
+    const result = await searchPapers({
+      source: options.source as 'arxiv' | 'openalex' | 'europepmc' | 'core',
+      query: options.query,
+      field: field as 'all' | 'title' | 'abstract' | 'author' | 'fulltext',
+      sortBy: sortBy as 'relevance' | 'date' | 'citations',
+      count
+    }, rateLimiter);
+    
+    console.log(`\nFound ${result.content.length} papers from ${options.source} for query "${options.query}" in ${field} field:\n`);
+    
+    result.content.forEach((paper, index) => {
+      console.log(`🔍 ${index + 1}. ${paper.title}`);
+      console.log(`   ID: ${paper.id}`);
+      console.log(`   Authors: ${paper.authors.join(', ')}`);
+      console.log(`   Date: ${paper.date}`);
+      if (paper.pdf_url) {
+        console.log(`   PDF: ${paper.pdf_url}`);
+      }
+      
+      displayTextContent(paper, options.showText || false, options.textPreview);
+      console.log('');
+    });
+
+  } catch (error) {
+    logError('Failed to search papers', { 
+      source: options.source,
+      query: options.query,
+      field,
+      sortBy,
+      error: error instanceof Error ? error.message : error 
+    });
+    console.error(`Error searching papers:`, 
       error instanceof Error ? error.message : error);
     process.exit(1);
   }

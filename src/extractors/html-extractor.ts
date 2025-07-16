@@ -6,26 +6,68 @@ import {
   ExtractionConfig,
 } from "./base-extractor.js";
 import { TextCleaner } from "./text-cleaner.js";
+import { PdfExtractor } from "./pdf-extractor.js";
 import { logger } from "../core/logger.js";
 
 export class HtmlExtractor extends BaseExtractor {
   private textCleaner: TextCleaner;
+  private pdfExtractor: PdfExtractor | null = null;
 
   constructor(config: ExtractionConfig) {
     super(config);
     this.textCleaner = new TextCleaner(config.cleaningOptions);
+    
+    // Initialize PDF extractor if enabled
+    if (config.enablePdfExtraction) {
+      this.pdfExtractor = new PdfExtractor(config, {
+        maxSizeMB: 50,
+        timeoutMs: 120000,
+        maxPages: 100,
+        requireConfirmation: false, // No confirmation in automatic fallback
+        interactive: false,
+      });
+    }
   }
 
-  async extractText(url: string): Promise<TextExtractionResult> {
+  async extractText(url: string, fallbackPdfUrl?: string): Promise<TextExtractionResult> {
     try {
       logger.info("Starting HTML text extraction", { url });
 
+      let result: TextExtractionResult;
+
       // Determine extraction strategy based on URL
       if (url.includes("arxiv.org") || url.includes("ar5iv.labs.arxiv.org")) {
-        return await this.extractArxivText(url);
+        result = await this.extractArxivText(url);
       } else {
-        return await this.extractOpenAlexText(url);
+        result = await this.extractOpenAlexText(url);
       }
+
+      // If HTML extraction failed and PDF extraction is enabled, try PDF fallback
+      if (!result.extractionSuccess && this.pdfExtractor && fallbackPdfUrl) {
+        logger.info("HTML extraction failed, attempting PDF fallback", {
+          htmlUrl: url,
+          pdfUrl: fallbackPdfUrl,
+        });
+        
+        try {
+          const pdfResult = await this.pdfExtractor.extractText(fallbackPdfUrl);
+          if (pdfResult.extractionSuccess) {
+            logger.info("PDF fallback extraction successful", {
+              htmlUrl: url,
+              pdfUrl: fallbackPdfUrl,
+            });
+            return pdfResult;
+          }
+        } catch (pdfError) {
+          logger.warn("PDF fallback extraction failed", {
+            htmlUrl: url,
+            pdfUrl: fallbackPdfUrl,
+            error: pdfError instanceof Error ? pdfError.message : String(pdfError),
+          });
+        }
+      }
+
+      return result;
     } catch (error) {
       logger.error("HTML text extraction failed", {
         url,

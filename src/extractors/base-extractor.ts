@@ -2,13 +2,17 @@ export interface TextExtractionResult {
   text: string;
   truncated: boolean;
   extractionSuccess: boolean;
-  source: "arxiv-html" | "ar5iv" | "openalex-html" | "failed";
+  source: "arxiv-html" | "ar5iv" | "openalex-html" | "pdf" | "failed";
+  metadata?: {
+    [key: string]: any;
+  };
 }
 
 export interface ExtractionConfig {
   maxTextLength: number; // For 8MB limit
   enableArxivFallback: boolean;
   enableOpenAlexExtraction: boolean;
+  enablePdfExtraction: boolean;
   cleaningOptions: {
     removeExtraWhitespace: boolean;
     removeSpecialChars: boolean;

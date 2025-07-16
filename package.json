@@ -1,6 +1,6 @@
 {
   "name": "@futurelab-studio/latest-science-mcp",
-  "version": "0.1.30",
+  "version": "0.1.31",
   "description": "MCP Server for Scientific Paper Harvesting from arXiv and OpenAlex",
   "type": "module",
   "main": "dist/server.js",
@@ -46,13 +46,15 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.0",
-    "zod": "^3.22.0",
     "axios": "^1.9.0",
     "cheerio": "^1.0.0",
-    "winston": "^3.11.0"
+    "pdf-parse": "^1.1.1",
+    "winston": "^3.11.0",
+    "zod": "^3.22.0"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
+    "@types/pdf-parse": "^1.1.5",
     "@typescript-eslint/eslint-plugin": "^6.0.0",
     "@typescript-eslint/parser": "^6.0.0",
     "eslint": "^8.0.0",

@@ -8,6 +8,7 @@ import { fetchLatest } from "./tools/fetch-latest.js";
 import { fetchTopCited } from "./tools/fetch-top-cited.js";
 import { fetchContent } from "./tools/fetch-content.js";
 import { searchPapers } from "./tools/search-papers.js";
+import { fetchPdfContent } from "./tools/fetch-pdf-content.js";
 import { RateLimiter } from "./core/rate-limiter.js";
 import { logInfo, logError } from "./core/logger.js";
 
@@ -461,6 +462,111 @@ async function startMCPServer() {
         logError('Error in search_papers tool', { 
           error: error instanceof Error ? error.message : error,
           source, query, field, count, sortBy 
+        });
+        
+        return {
+          isError: true,
+          content: [
+            {
+              type: "text",
+              text: `Error: ${error instanceof Error ? error.message : String(error)}`
+            }
+          ]
+        };
+      }
+    }
+  );
+
+  // Add fetch_pdf_content tool
+  server.tool("fetch_pdf_content",
+    {
+      url: z.string().url().describe("Direct URL to a PDF file"),
+      maxSizeMB: z.number().min(1).max(100).default(50).describe("Maximum PDF size in MB"),
+      maxPages: z.number().min(1).max(500).default(100).describe("Maximum pages to extract"),
+      timeout: z.number().min(10).max(300).default(120).describe("Timeout in seconds"),
+      confirmLargeFiles: z.boolean().default(true).describe("Require confirmation for large files"),
+    },
+    async ({ url, maxSizeMB, maxPages, timeout, confirmLargeFiles }) => {
+      try {
+        logInfo('MCP tool called', { 
+          tool: 'fetch_pdf_content', 
+          url, 
+          maxSizeMB, 
+          maxPages, 
+          timeout,
+          confirmLargeFiles
+        });
+        
+        const result = await fetchPdfContent.execute({
+          url,
+          maxSizeMB,
+          maxPages,
+          timeout,
+          confirmLargeFiles,
+        });
+        
+        if (result.requiresConfirmation) {
+          return {
+            content: [
+              {
+                type: "text",
+                text: "⚠️ Large PDF Detection - Confirmation Required"
+              },
+              {
+                type: "text",
+                text: JSON.stringify(result.confirmationDetails, null, 2)
+              },
+              {
+                type: "text",
+                text: "Please confirm if you want to proceed with extraction. Large PDFs may consume significant context window space."
+              }
+            ]
+          };
+        }
+        
+        if (result.cancelled) {
+          return {
+            content: [
+              {
+                type: "text",
+                text: `PDF extraction cancelled: ${result.error}`
+              }
+            ]
+          };
+        }
+        
+        if (!result.success) {
+          return {
+            isError: true,
+            content: [
+              {
+                type: "text",
+                text: `PDF extraction failed: ${result.error}`
+              }
+            ]
+          };
+        }
+        
+        const contextWarningText = result.metadata?.contextWarning 
+          ? `\n\n${result.metadata.contextWarning}` 
+          : "";
+        
+        return {
+          content: [
+            {
+              type: "text",
+              text: `Successfully extracted text from PDF (${result.metadata?.pageCount} pages, ${result.metadata?.sizeMB?.toFixed(1)}MB)${contextWarningText}`
+            },
+            {
+              type: "text",
+              text: result.text || ""
+            }
+          ]
+        };
+      } catch (error) {
+        logError('Error in fetch_pdf_content tool', { 
+          error: error instanceof Error ? error.message : error,
+          url, maxSizeMB, maxPages, timeout
         });
         
         return {
