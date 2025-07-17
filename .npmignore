@@ -51,3 +51,5 @@ nyc_output/
 yarn.lock 
 
 CLAUDE.md
+.mcp.json
+mcpconfig.json

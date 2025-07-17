@@ -10,7 +10,7 @@ import { fetchContent } from "./tools/fetch-content.js";
 import { searchPapers } from "./tools/search-papers.js";
 import { fetchPdfContent } from "./tools/fetch-pdf-content.js";
 import { RateLimiter } from "./core/rate-limiter.js";
-import { logInfo, logError } from "./core/logger.js";
+import { logInfo, logError, logWarn } from "./core/logger.js";
 
 // Detect if we should run in CLI mode or MCP server mode
 // CLI mode: when command line arguments are provided
@@ -44,7 +44,7 @@ async function startMCPServer() {
 
   const server = new McpServer({
     name: "SciHarvester",
-    version: "0.1.30",
+    version: "0.1.38",
     description: `
       🔬 SciHarvester: Advanced Scientific Literature Access System
       
@@ -484,9 +484,9 @@ async function startMCPServer() {
       maxSizeMB: z.number().min(1).max(100).default(50).describe("Maximum PDF size in MB"),
       maxPages: z.number().min(1).max(500).default(100).describe("Maximum pages to extract"),
       timeout: z.number().min(10).max(300).default(120).describe("Timeout in seconds"),
-      confirmLargeFiles: z.boolean().default(true).describe("Require confirmation for large files"),
+      confirmLargeFiles: z.boolean().default(false).describe("Require confirmation for large files - disabled for MCP mode"),
     },
-    async ({ url, maxSizeMB, maxPages, timeout, confirmLargeFiles }) => {
+    async ({ url, maxSizeMB = 50, maxPages = 100, timeout = 120, confirmLargeFiles = false }) => {
       try {
         logInfo('MCP tool called', { 
           tool: 'fetch_pdf_content', 
@@ -497,51 +497,66 @@ async function startMCPServer() {
           confirmLargeFiles
         });
         
-        const result = await fetchPdfContent.execute({
-          url,
+        // Create a simple PDF extractor for MCP mode (non-interactive)
+        const { PdfExtractor } = await import("./extractors/pdf-extractor.js");
+        const { DEFAULT_TEXT_EXTRACTION_CONFIG } = await import("./config/constants.js");
+        
+        const extractor = new PdfExtractor(DEFAULT_TEXT_EXTRACTION_CONFIG, {
           maxSizeMB,
+          timeoutMs: timeout * 1000,
           maxPages,
-          timeout,
-          confirmLargeFiles,
+          requireConfirmation: confirmLargeFiles,
+          interactive: false, // Non-interactive mode for MCP
         });
         
-        if (result.requiresConfirmation) {
-          return {
-            content: [
-              {
-                type: "text",
-                text: "⚠️ Large PDF Detection - Confirmation Required"
-              },
-              {
-                type: "text",
-                text: JSON.stringify(result.confirmationDetails, null, 2)
-              },
-              {
-                type: "text",
-                text: "Please confirm if you want to proceed with extraction. Large PDFs may consume significant context window space."
-              }
-            ]
-          };
-        }
+        const result = await extractor.extractText(
+          url,
+          (progress) => {
+            logInfo("PDF extraction progress", {
+              url,
+              phase: progress.phase,
+              progress: progress.progress,
+              message: progress.message,
+            });
+          },
+          async (metadata) => {
+            // Auto-confirm for MCP mode based on size limits
+            if (metadata.sizeMB > maxSizeMB) {
+              logWarn("PDF exceeds size limit, declining extraction", {
+                url: metadata.url,
+                sizeMB: metadata.sizeMB,
+                maxSizeMB,
+              });
+              return false;
+            }
+            
+            // Auto-confirm for reasonable sizes
+            logInfo("PDF within size limits, proceeding with extraction", {
+              url: metadata.url,
+              sizeMB: metadata.sizeMB,
+            });
+            return true;
+          }
+        );
         
-        if (result.cancelled) {
-          return {
-            content: [
-              {
-                type: "text",
-                text: `PDF extraction cancelled: ${result.error}`
-              }
-            ]
-          };
-        }
-        
-        if (!result.success) {
+        if (!result.extractionSuccess) {
+          if (result.metadata?.userCancelled) {
+            return {
+              content: [
+                {
+                  type: "text",
+                  text: `PDF extraction cancelled: ${result.metadata.reason || "Extraction cancelled"}`
+                }
+              ]
+            };
+          }
+          
           return {
             isError: true,
             content: [
               {
                 type: "text",
-                text: `PDF extraction failed: ${result.error}`
+                text: "PDF extraction failed"
               }
             ]
           };
@@ -551,11 +566,14 @@ async function startMCPServer() {
           ? `\n\n${result.metadata.contextWarning}` 
           : "";
         
+        const pageCount = result.metadata?.pageCount;
+        const sizeMB = result.metadata?.pdfSize;
+        
         return {
           content: [
             {
               type: "text",
-              text: `Successfully extracted text from PDF (${result.metadata?.pageCount} pages, ${result.metadata?.sizeMB?.toFixed(1)}MB)${contextWarningText}`
+              text: `Successfully extracted text from PDF${pageCount ? ` (${pageCount} pages)` : ''}${sizeMB ? `, ${sizeMB.toFixed(1)}MB` : ''}${contextWarningText}`
             },
             {
               type: "text",

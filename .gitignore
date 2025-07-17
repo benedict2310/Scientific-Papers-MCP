@@ -55,3 +55,6 @@ examples/blog*
 examples/social-media*
 
 CLAUDE.md
+.mcp.json
+mcpconfig.json
+.npmignore
