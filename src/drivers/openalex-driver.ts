@@ -700,14 +700,33 @@ export class OpenAlexDriver extends BaseDriver {
           break;
       }
 
-      // For now, use general search for all fields to avoid 403 errors
-      // TODO: Implement field-specific search properly
-      const requestParams = {
-        search: query,
+      // Build search parameters based on field
+      let requestParams: any = {
         sort: sortParam,
         per_page: Math.min(count, 200),
         select: "id,title,display_name,publication_date,doi,authorships,primary_location,best_oa_location,locations,open_access,cited_by_count,concepts",
       };
+
+      // Map field to OpenAlex search syntax
+      switch (field) {
+        case "title":
+          requestParams.filter = `title.search:${query}`;
+          break;
+        case "abstract":
+          requestParams.filter = `abstract.search:${query}`;
+          break;
+        case "author":
+          requestParams.filter = `authorships.author.display_name.search:${query}`;
+          break;
+        case "fulltext":
+          requestParams.filter = `fulltext.search:${query}`;
+          break;
+        case "all":
+        default:
+          // For general search, use the search parameter instead of filter
+          requestParams.search = query;
+          break;
+      }
 
       const response = await axios.get<OpenAlexWorksResponse>(
         `${OPENALEX_API_BASE}/works`,
