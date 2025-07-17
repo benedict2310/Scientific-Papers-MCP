@@ -1,6 +1,6 @@
 {
   "name": "@futurelab-studio/latest-science-mcp",
-  "version": "0.1.36",
+  "version": "0.1.37",
   "description": "MCP Server for Scientific Paper Harvesting from arXiv and OpenAlex",
   "type": "module",
   "main": "dist/server.js",

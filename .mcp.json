@@ -1,0 +1,18 @@
+{
+  "mcpServers": {
+  "scientific-papers": {
+    "command": "npx",
+    "args": [
+      "-y",
+      "@futurelab-studio/latest-science-mcp@0.1.37"
+    ]
+  },
+    "context7": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@upstash/context7-mcp"
+      ]
+    }
+  }
+}
