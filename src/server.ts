@@ -480,11 +480,76 @@ async function startMCPServer() {
   // Add fetch_pdf_content tool
   server.tool("fetch_pdf_content",
     {
-      url: z.string().url().describe("Direct URL to a PDF file"),
-      maxSizeMB: z.number().min(1).max(100).default(50).describe("Maximum PDF size in MB"),
-      maxPages: z.number().min(1).max(500).default(100).describe("Maximum pages to extract"),
-      timeout: z.number().min(10).max(300).default(120).describe("Timeout in seconds"),
-      confirmLargeFiles: z.boolean().default(false).describe("Require confirmation for large files - disabled for MCP mode"),
+      url: z.string().url().describe(`
+        Direct URL to a PDF file
+        
+        SUPPORTED SOURCES:
+        • arXiv PDFs: https://arxiv.org/pdf/2305.11176.pdf
+        • Research institution repositories
+        • Journal publisher PDFs (if publicly accessible)
+        • Conference proceedings PDFs
+        • Preprint server PDFs
+        
+        USAGE EXAMPLES:
+        • Extract full text from arXiv papers for analysis
+        • Get complete paper content when abstracts aren't sufficient
+        • Access detailed methodology sections, results, and conclusions
+        • Extract references and citations from papers
+        
+        NOTE: This tool extracts the full text content from PDF files, not just metadata.
+        Use this when you need the complete paper text for analysis, summarization, or research.
+      `),
+      maxSizeMB: z.number().min(1).max(100).default(50).describe(`
+        Maximum PDF size in MB (default: 50MB)
+        
+        SIZE RECOMMENDATIONS:
+        • Small papers (1-10 pages): 5-10MB limit
+        • Regular papers (10-30 pages): 20-50MB limit  
+        • Large papers/books (30+ pages): 50-100MB limit
+        
+        PERFORMANCE NOTES:
+        • Larger files take longer to process
+        • Files over 50MB may timeout in some environments
+        • Consider using smaller limits for faster processing
+      `),
+      maxPages: z.number().min(1).max(500).default(100).describe(`
+        Maximum pages to extract (default: 100 pages)
+        
+        PAGE RECOMMENDATIONS:
+        • Research papers: 50-100 pages usually sufficient
+        • Conference papers: 20-50 pages typically enough
+        • Books/dissertations: 200-500 pages for complete extraction
+        
+        EXTRACTION BEHAVIOR:
+        • Extracts from beginning of document up to page limit
+        • Maintains document structure and formatting
+        • Includes headers, footers, and captions
+      `),
+      timeout: z.number().min(10).max(300).default(120).describe(`
+        Timeout in seconds (default: 120s)
+        
+        TIMEOUT RECOMMENDATIONS:
+        • Small PDFs (<5MB): 30-60 seconds
+        • Medium PDFs (5-20MB): 60-120 seconds
+        • Large PDFs (20MB+): 120-300 seconds
+        
+        FACTORS AFFECTING PROCESSING TIME:
+        • File size and complexity
+        • Network speed for download
+        • OCR processing for scanned documents
+      `),
+      confirmLargeFiles: z.boolean().default(false).describe(`
+        Require confirmation for large files (default: false for MCP mode)
+        
+        CONFIRMATION BEHAVIOR:
+        • false: Automatically process files within size limits
+        • true: Prompt user for confirmation on large files (CLI mode only)
+        
+        AUTO-CONFIRMATION LOGIC:
+        • Files within maxSizeMB limit: Auto-approved
+        • Files exceeding maxSizeMB limit: Auto-rejected
+        • MCP mode always uses auto-confirmation for seamless operation
+      `),
     },
     async ({ url, maxSizeMB = 50, maxPages = 100, timeout = 120, confirmLargeFiles = false }) => {
       try {
