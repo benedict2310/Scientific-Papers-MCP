@@ -11,6 +11,9 @@ export const logger = winston.createLogger({
   transports: [
     new winston.transports.Console({
       format: winston.format.simple(),
+      // MCP servers MUST write logs to stderr, not stdout
+      // stdout is reserved for JSON-RPC communication
+      stderrLevels: ["error", "warn", "info", "http", "verbose", "debug", "silly"],
     }),
   ],
 });
